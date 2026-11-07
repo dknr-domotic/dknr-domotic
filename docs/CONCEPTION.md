@@ -117,7 +117,16 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 * **Pièces** : plan, entités par usage avec pilotage et historique (InfluxDB), caméras, heures de confort, jours travaillés.
 * **Energie** : carte des flux (réseau, solaire, batterie, maison, lumières = somme des puissances visibles des parents ayant une lumière ou un spot visible), graphiques puissance / énergie / batterie aux couleurs fixes, résumé.
 * **Scènes** : édition, déclencheurs (formulaire adapté à l'unité : liste pour les enums avec options, texte sinon), minuteurs, événements, détail et débogage.
-* **Entités**, **Calendrier**, **Configuration** (MQTT, utilisateurs, pièces, export / import sélectif, remise à zéro du quotidien), **Authentification** (utilisateurs avec niveau et langue).
+* **Entités**, **Calendrier**, **Configuration** (MQTT, nouvel utilisateur, liste des utilisateurs, pièces, export / import sélectif, remise à zéro du quotidien), **Authentification** (utilisateurs avec niveau et langue).
+
+
+## Utilisateurs
+
+* Niveaux : `admin`, `parent`, `kid`, `visitor`. Comptes dans `auth` (identifiant en minuscules, mot de passe bcrypt), sessions ouvertes dans `user` (par socket du tableau de bord, supprimées à la déconnexion du navigateur).
+* `auth` est rechargé au démarrage depuis `/data/backup/user.json` (pas depuis le stockage `file`) : toute modification des comptes (création, suppression, import) doit l'écrire par un lien vers `common - user - write`.
+* La page Configuration est ouverte aux niveaux `admin` et `parent`. Les entrées du menu sont filtrées par niveau (table `access` dans les nœuds data du menu et de la sélection, à garder identiques) : `parent` ne voit que la liste des utilisateurs. Les formulaires de configuration vérifient aussi le niveau `admin`.
+* Liste des utilisateurs (`ui - dialog - config - users`) : identifiant, niveau, langue, sessions ouvertes, boutons Déconnecter et Supprimer. Un `admin` agit sur tous les autres comptes, un `parent` seulement sur les `kid` et `visitor`, personne sur son propre compte ; le compte `admin` n'est jamais supprimé. Les droits sont recalculés à l'action. Déconnecter ferme les sessions du compte et renvoie ses navigateurs vers la page d'authentification (`ui-control` ciblé par `msg._client.socketId`).
+* Un bouton de tableau dont le libellé est vide est masqué (style `.v-table td .v-btn:has(.v-btn__content:empty)`).
 
 
 ## Pistes et points ouverts

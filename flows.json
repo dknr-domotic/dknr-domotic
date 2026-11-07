@@ -271,12 +271,19 @@
             "8adb158625cd7b77",
             "fe39d55b1d2b2fa5",
             "ca76a51dc84e5307",
-            "851f742182959e67"
+            "851f742182959e67",
+            "ae383c95503c0c9c",
+            "82b748fa728966db",
+            "5da588352b9bed1c",
+            "48f5b9d6feea2585",
+            "5341f4f6f18fed9e",
+            "7b3d122aba8d3a0a",
+            "838cadd8f49f5c48"
         ],
         "x": 104,
         "y": 339,
         "w": 952,
-        "h": 802
+        "h": 962
     },
     {
         "id": "56577cc20111c3b4",
@@ -2368,6 +2375,21 @@
         "tab": ""
     },
     {
+        "id": "efcee5feb0d7b078",
+        "type": "ui-group",
+        "name": "ui - dialog - config - users",
+        "page": "6ad5b379d58d7aa1",
+        "width": "6",
+        "height": 1,
+        "order": 7,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "dialog",
+        "tab": ""
+    },
+    {
         "id": "3d7cbc9ccffb5711",
         "type": "ui-page",
         "name": "ui - page - entity",
@@ -3834,7 +3856,9 @@
         "g": "7ea06c29d525f7ce",
         "name": "common - user - write",
         "links": [
-            "44a9a10bea4cbb76"
+            "44a9a10bea4cbb76",
+            "5341f4f6f18fed9e",
+            "7b3d122aba8d3a0a"
         ],
         "x": 145,
         "y": 860,
@@ -4227,7 +4251,8 @@
             "44b7bc464b8cb1d2",
             "e5ad7834ef397766",
             "d74d6fbf0abd6f0f",
-            "c740b6a6eb799115"
+            "c740b6a6eb799115",
+            "838cadd8f49f5c48"
         ],
         "x": 145,
         "y": 1460,
@@ -4250,7 +4275,7 @@
         "width": 0,
         "height": 0,
         "head": "",
-        "format": ".app-bar-actions-title {\n    margin: auto;\n    text-shadow: rgb(var(--v-theme-background)) 2px 2px 1px;\n}\n\nbody {\n    background-color: rgb(var(--v-theme-background)) !important;\n}\n\n.v-toolbar .v-btn-group {\n    background: rgb(var(--v-theme-navigation-background));\n}\n\n.remove *,\n.v-card .remove,\n.v-card-text .remove,\n.v-card-item {\n    display: none !important;\n    visibility: hidden;\n    color: transparent !important;\n}\n\n.dknr-center {\n    margin: auto;\n}\n\n.dknr-center .nrdb-switch,\n.dknr-center .v-btn-group {\n    margin: auto;\n}\n\ntbody td[data-column-key=dknr-label] {\n    font-weight: bold !important;\n}\n\n.v-tab-item--selected {\n    color: rgb(var(--v-theme-primary)) !important;\n}\n\n.nrdb-ui-group {\n    border-radius: 4px;\n}\n\n.v-main {\n    padding-bottom: 2em;\n}\n\n.dknr-title span {\n    font-size: 1.4rem !important;\n    font-weight: normal !important;\n    padding: 0;\n    margin-top: 0.5em;\n    color: rgb(var(--v-theme-primary)) !important;\n}\n.dknr-row-icon {\n    font-size: 1.8em;\n}\n.dknr-weather {\n    font-family: Arial, Helvetica, sans-serif;\n}\n.dknr-weather-day th {\n    display: none;\n    visibility: hidden;\n}\n.dknr-weather-day td {\n    border-bottom-width: 0 !important;\n    border-left-width: 1px !important;\n}\n.dknr-weather-day span.dknr-weather {\n    font-size: 1.4em;\n}\n.dknr-weather img {\n    width: 4em;\n    height: 4em;\n    background-color: rgb(var(--v-theme-primary));\n    border-radius: 4px;\n}\n.dknr-camera {\n    text-align: center !important;\n    flex: 1 0;\n}\n.dknr-camera img {\n    width: 90%;\n    border-radius: 4px;\n    border: 1px solid rgba(var(--v-theme-group-outline));\n}\n.dknr-map {\n    color: rgb(var(--v-theme-background));\n    fill: rgb(var(--v-theme-primary));\n}\n.dknr-bg {\n    fill: rgb(var(--v-theme-background));\n}\n.dknr-blue {\n    fill: rgb(var(--v-theme-primary));\n}\n.dknr-green {\n    fill: green;\n}\n.dknr-orange {\n    fill: orange;\n}\n.dknr-red {\n    fill: red;\n}\n.dknr-grey {\n    fill: grey;\n}\n.dknr-light > .dknr-zone {\n    fill: rgb(255, 225, 0, 0.1);\n}\n.dknr-motion > .dknr-title {\n    stroke: red;\n    stroke-opacity: 0.5;\n}\n.dknr-climate > .dknr-text {\n    fill: red;\n}\n.dknr-aperture > .dknr-zone {\n    stroke: red;\n    stroke-width: 5px;\n    stroke-opacity: 0.25;\n}\n",
+        "format": ".app-bar-actions-title {\n    margin: auto;\n    text-shadow: rgb(var(--v-theme-background)) 2px 2px 1px;\n}\n\nbody {\n    background-color: rgb(var(--v-theme-background)) !important;\n}\n\n.v-toolbar .v-btn-group {\n    background: rgb(var(--v-theme-navigation-background));\n}\n\n.remove *,\n.v-card .remove,\n.v-card-text .remove,\n.v-card-item {\n    display: none !important;\n    visibility: hidden;\n    color: transparent !important;\n}\n\n.dknr-center {\n    margin: auto;\n}\n\n.dknr-center .nrdb-switch,\n.dknr-center .v-btn-group {\n    margin: auto;\n}\n\ntbody td[data-column-key=dknr-label] {\n    font-weight: bold !important;\n}\n\n.v-tab-item--selected {\n    color: rgb(var(--v-theme-primary)) !important;\n}\n\n.nrdb-ui-group {\n    border-radius: 4px;\n}\n\n.v-main {\n    padding-bottom: 2em;\n}\n\n.dknr-title span {\n    font-size: 1.4rem !important;\n    font-weight: normal !important;\n    padding: 0;\n    margin-top: 0.5em;\n    color: rgb(var(--v-theme-primary)) !important;\n}\n.dknr-row-icon {\n    font-size: 1.8em;\n}\n.dknr-weather {\n    font-family: Arial, Helvetica, sans-serif;\n}\n.dknr-weather-day th {\n    display: none;\n    visibility: hidden;\n}\n.dknr-weather-day td {\n    border-bottom-width: 0 !important;\n    border-left-width: 1px !important;\n}\n.dknr-weather-day span.dknr-weather {\n    font-size: 1.4em;\n}\n.dknr-weather img {\n    width: 4em;\n    height: 4em;\n    background-color: rgb(var(--v-theme-primary));\n    border-radius: 4px;\n}\n.dknr-camera {\n    text-align: center !important;\n    flex: 1 0;\n}\n.dknr-camera img {\n    width: 90%;\n    border-radius: 4px;\n    border: 1px solid rgba(var(--v-theme-group-outline));\n}\n.dknr-map {\n    color: rgb(var(--v-theme-background));\n    fill: rgb(var(--v-theme-primary));\n}\n.dknr-bg {\n    fill: rgb(var(--v-theme-background));\n}\n.dknr-blue {\n    fill: rgb(var(--v-theme-primary));\n}\n.dknr-green {\n    fill: green;\n}\n.dknr-orange {\n    fill: orange;\n}\n.dknr-red {\n    fill: red;\n}\n.dknr-grey {\n    fill: grey;\n}\n.dknr-light > .dknr-zone {\n    fill: rgb(255, 225, 0, 0.1);\n}\n.dknr-motion > .dknr-title {\n    stroke: red;\n    stroke-opacity: 0.5;\n}\n.dknr-climate > .dknr-text {\n    fill: red;\n}\n.dknr-aperture > .dknr-zone {\n    stroke: red;\n    stroke-width: 5px;\n    stroke-opacity: 0.25;\n}\n.v-table td .v-btn:has(.v-btn__content:empty) {\n    visibility: hidden;\n}\n",
         "noerr": 0,
         "storeOutMessages": true,
         "passthru": true,
@@ -21105,7 +21130,7 @@
         "z": "d90937c9d5b88b24",
         "g": "74e3eb9607fef02f",
         "name": "page",
-        "func": "// Register page\n\nmsg.payload = {\n    'order': 6,\n    'flow': env.get('NR_FLOW_NAME'),\n    'name': 'ui - page - config',\n    'id': '6ad5b379d58d7aa1',\n    'icon': 'cog',\n    'level': {\n        'admin': true,\n        'parent': false,\n        'kid': false,\n        'visitor': false\n    }\n};\n\nmsg = await node.linkcall('common - register - page', msg);\n\nreturn;",
+        "func": "// Register page\n\nmsg.payload = {\n    'order': 6,\n    'flow': env.get('NR_FLOW_NAME'),\n    'name': 'ui - page - config',\n    'id': '6ad5b379d58d7aa1',\n    'icon': 'cog',\n    'level': {\n        'admin': true,\n        'parent': true,\n        'kid': false,\n        'visitor': false\n    }\n};\n\nmsg = await node.linkcall('common - register - page', msg);\n\nreturn;",
         "outputs": 0,
         "timeout": 0,
         "noerr": 0,
@@ -21122,7 +21147,7 @@
         "z": "d90937c9d5b88b24",
         "g": "74e3eb9607fef02f",
         "name": "dictionary",
-        "func": "// Register page\n\nmsg.payload = {\n    'flow': env.get('NR_FLOW_NAME'),\n    'en': {\n        'page_title': 'Settings'\n    },\n    'fr': {\n        'page_title': 'Configuration',\n        'backup_select': 'Données à exporter',\n        'backup_empty': 'Aucune donnée sélectionnée',\n        'backup_auth': 'Utilisateurs',\n        'backup_mqtt': 'MQTT',\n        'backup_room': 'Pièces',\n        'backup_parent': 'Appareils',\n        'backup_entity': 'Entités',\n        'backup_block': 'Entités bloquées',\n        'backup_calendar': 'Calendrier',\n        'backup_energy': 'Energie',\n        'backup_scene': 'Scènes',\n        'backup': 'Import/Export',\n        'room': 'Pièce',\n        'user': 'Utilisateur',\n        'various': 'Divers',\n\n        'mqtt': 'MQTT',\n        'mqtt_host': 'Adresse',\n        'mqtt_port': 'Port',\n        'mqtt_topic': 'DKNR Topic',\n        'mqtt_username': 'Identifiant',\n        'mqtt_password': 'Mot de passe',\n        'mqtt_homeassistant': 'Topic découverte Home assistant',\n        'mqtt_enabled': 'Activé',\n\n        'user_login': 'Identifiant',\n        'user_pass': 'Mot de passe',\n        'user_level': 'Niveau',\n        'user_lang': 'Langue',\n        'user_telegram': 'Telegram',\n\n        'backup_download': 'Télécharger la sauvegarde',\n        'backup_upload': 'Importer une sauvegarde',\n        'room_id': 'Identifiant',\n        'room_name': 'Nom',\n        'room_outdoor': 'Extérieur',\n        'user_lang_en': 'English',\n        'user_lang_fr': 'Français',\n        'users': 'Utilisateurs',\n        'various_loginauto': 'Connexion automatique en administrateur',\n        'various_loginmanual': 'Exiger une connexion',\n        'various_resetdaily': 'Réinitialiser les routines quotidiennes'\n    }\n};\n\nmsg = await node.linkcall('common - register - dictionary', msg);\n\nreturn;",
+        "func": "// Register page\n\nmsg.payload = {\n    'flow': env.get('NR_FLOW_NAME'),\n    'en': {\n        'page_title': 'Settings',\n        'users': 'Users',\n        'users_disconnect': 'Disconnect',\n        'users_delete': 'Delete',\n        'users_connected': 'Connected',\n        'users_disconnected': 'User disconnected',\n        'users_deleted': 'User deleted',\n        'users_denied': 'Action not allowed'\n    },\n    'fr': {\n        'page_title': 'Configuration',\n        'backup_select': 'Données à exporter',\n        'backup_empty': 'Aucune donnée sélectionnée',\n        'backup_auth': 'Utilisateurs',\n        'backup_mqtt': 'MQTT',\n        'backup_room': 'Pièces',\n        'backup_parent': 'Appareils',\n        'backup_entity': 'Entités',\n        'backup_block': 'Entités bloquées',\n        'backup_calendar': 'Calendrier',\n        'backup_energy': 'Energie',\n        'backup_scene': 'Scènes',\n        'backup': 'Import/Export',\n        'room': 'Pièce',\n        'user': 'Utilisateur',\n        'various': 'Divers',\n\n        'mqtt': 'MQTT',\n        'mqtt_host': 'Adresse',\n        'mqtt_port': 'Port',\n        'mqtt_topic': 'DKNR Topic',\n        'mqtt_username': 'Identifiant',\n        'mqtt_password': 'Mot de passe',\n        'mqtt_homeassistant': 'Topic découverte Home assistant',\n        'mqtt_enabled': 'Activé',\n\n        'user_login': 'Identifiant',\n        'user_pass': 'Mot de passe',\n        'user_level': 'Niveau',\n        'user_lang': 'Langue',\n        'user_telegram': 'Telegram',\n\n        'backup_download': 'Télécharger la sauvegarde',\n        'backup_upload': 'Importer une sauvegarde',\n        'room_id': 'Identifiant',\n        'room_name': 'Nom',\n        'room_outdoor': 'Extérieur',\n        'user_lang_en': 'English',\n        'user_lang_fr': 'Français',\n        'users': 'Utilisateurs',\n        'users_disconnect': 'Déconnecter',\n        'users_delete': 'Supprimer',\n        'users_connected': 'Connecté',\n        'users_disconnected': 'Utilisateur déconnecté',\n        'users_deleted': 'Utilisateur supprimé',\n        'users_denied': 'Action non autorisée',\n        'various_loginauto': 'Connexion automatique en administrateur',\n        'various_loginmanual': 'Exiger une connexion',\n        'various_resetdaily': 'Réinitialiser les routines quotidiennes'\n    }\n};\n\nmsg = await node.linkcall('common - register - dictionary', msg);\n\nreturn;",
         "outputs": 0,
         "timeout": 0,
         "noerr": 0,
@@ -21309,7 +21334,7 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.payload.host === '' || !msg.payload.port || msg.payload.topic === '') {\n    msg.payload.enabled = false;\n}\n\nglobal.set('mqtt', msg.payload);\n\nmsg.payload = '';\nmsg.enabled = true;\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success || 'Successfully saved';\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Wait\nmsg = await node.linkcall('common - ui - latency', msg);\n\nreturn msg;",
+        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.hmi.level !== 'admin') {\n\n    return;\n}\n\nif (msg.payload.host === '' || !msg.payload.port || msg.payload.topic === '') {\n    msg.payload.enabled = false;\n}\n\nglobal.set('mqtt', msg.payload);\n\nmsg.payload = '';\nmsg.enabled = true;\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success || 'Successfully saved';\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Wait\nmsg = await node.linkcall('common - ui - latency', msg);\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -21458,7 +21483,7 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Check display\nmsg = await node.linkcall('common - ui - enable', msg);\n\nif (!msg.enabled) {\n\n    return msg;\n}\n\nconst menu = {\n    'mqtt': ['database', msg.dictionary.config.mqtt || 'MQTT'],\n    'backup': ['backup-restore', msg.dictionary.config.backup || 'Import/Export'],\n    'various': ['tune', msg.dictionary.config.various || 'Various'],\n    'user': ['account-plus', msg.dictionary.config.user || 'New user'],\n    //'users': ['account-edit', msg.dictionary.config.users || 'Users'],\n    'room': ['home-plus', msg.dictionary.config.room || 'New room']\n};\n\nlet options = [];\nfor (const key in menu) {\n    options.push({\n        'value': key,\n        'label': menu[key][1],\n        'icon': menu[key][0]\n    });\n}\n\nmsg.ui_update = {\n    'label': '',\n    'options': options,\n    'class': ''\n};\nmsg.payload = '';\n\nreturn msg;",
+        "func": "\n// Check display\nmsg = await node.linkcall('common - ui - enable', msg);\n\nif (!msg.enabled) {\n\n    return msg;\n}\n\n// Menu entries allowed by user level (keep in sync with menu select)\nconst access = {\n    'mqtt': ['admin'],\n    'backup': ['admin'],\n    'various': ['admin'],\n    'user': ['admin'],\n    'users': ['admin', 'parent'],\n    'room': ['admin']\n};\n\nconst menu = {\n    'mqtt': ['database', msg.dictionary.config.mqtt || 'MQTT'],\n    'backup': ['backup-restore', msg.dictionary.config.backup || 'Import/Export'],\n    'various': ['tune', msg.dictionary.config.various || 'Various'],\n    'user': ['account-plus', msg.dictionary.config.user || 'New user'],\n    'users': ['account-edit', msg.dictionary.config.users || 'Users'],\n    'room': ['home-plus', msg.dictionary.config.room || 'New room']\n};\n\nlet options = [];\nfor (const key in menu) {\n    if (!(access[key] || []).includes(msg.hmi.level)) {\n\n        continue;\n    }\n\n    options.push({\n        'value': key,\n        'label': menu[key][1],\n        'icon': menu[key][0]\n    });\n}\n\nmsg.ui_update = {\n    'label': '',\n    'options': options,\n    'class': ''\n};\nmsg.payload = '';\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -21479,8 +21504,8 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.payload !== '') {\n    msg.show = ['ui - dialog - config - ' + msg.payload];\n    msg = await node.linkcall('common - ui - group', msg);\n    msg = await node.linkcall('common - ui - latency', msg);\n\n    // Fix flowfuse dashboard msg.topic fail\n    global.set('form[\"' + msg.hmi.id + '\"][\"dialog\"]', msg.payload);\n\n    msg.enabled = true;\n    node.send([msg, null]);\n}\n\nmsg.enabled = true;\nmsg.payload = '';\n\nreturn [null, msg];",
-        "outputs": 2,
+        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\n// Menu entries allowed by user level (keep in sync with menu data)\nconst access = {\n    'mqtt': ['admin'],\n    'backup': ['admin'],\n    'various': ['admin'],\n    'user': ['admin'],\n    'users': ['admin', 'parent'],\n    'room': ['admin']\n};\n\nif (msg.payload !== '' && (access[msg.payload] || []).includes(msg.hmi.level)) {\n    msg.show = ['ui - dialog - config - ' + msg.payload];\n    msg = await node.linkcall('common - ui - group', msg);\n    msg = await node.linkcall('common - ui - latency', msg);\n\n    // Fix flowfuse dashboard msg.topic fail\n    global.set('form[\"' + msg.hmi.id + '\"][\"dialog\"]', msg.payload);\n\n    msg.enabled = true;\n    if (msg.payload === 'users') {\n        // Users list (admin and parent)\n        node.send([null, null, msg]);\n    } else {\n        // Admin dialogs\n        node.send([msg, null, null]);\n    }\n}\n\nmsg.enabled = true;\nmsg.payload = '';\n\nreturn [null, msg, null];",
+        "outputs": 3,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -21498,6 +21523,9 @@
             ],
             [
                 "dc91748dafda086a"
+            ],
+            [
+                "ae383c95503c0c9c"
             ]
         ]
     },
@@ -21703,8 +21731,8 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.hmi.level !== 'admin' || msg.payload === '') {\n\n    return;\n}\n\nlet backup = {};\ntry {\n    backup = JSON.parse(msg.payload);\n\n} catch (error) {\n\n    return;\n}\n\nif (typeof backup['auth'] === 'object') {\n    let auth = global.get('auth') || {};\n    for (const k in backup['auth']) {\n        if (typeof auth[k] !== 'object') {\n            auth[k] = backup['auth'][k];\n        }\n    }\n    global.set('auth', auth);\n}\n\nif (typeof backup['mqtt'] === 'object') {\n    let mqtt = global.get('mqtt') || {};\n    for (const k in backup['mqtt']) {\n        if (typeof mqtt[k] !== 'undefined') {\n            mqtt[k] = backup['mqtt'][k];\n        }\n    }\n    global.set('mqtt', backup['mqtt']);\n}\n\n// Domotic settings\nfor (const k of ['room', 'parent', 'entity', 'block', 'calendar', 'energy', 'scene']) {\n    if (typeof backup[k] === 'object' && backup[k] !== null) {\n        global.set(k, backup[k]);\n    }\n}\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success;\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Hide dialog\nmsg.hide = ['ui - dialog - config - backup'];\nmsg = await node.linkcall('common - ui - group', msg);\n\nreturn;",
-        "outputs": 0,
+        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.hmi.level !== 'admin' || msg.payload === '') {\n\n    return;\n}\n\nlet backup = {};\ntry {\n    backup = JSON.parse(msg.payload);\n\n} catch (error) {\n\n    return;\n}\n\nif (typeof backup['auth'] === 'object') {\n    let auth = global.get('auth') || {};\n    for (const k in backup['auth']) {\n        if (typeof auth[k] !== 'object') {\n            auth[k] = backup['auth'][k];\n        }\n    }\n    global.set('auth', auth);\n\n    // Save users file\n    node.send({ 'payload': '' });\n}\n\nif (typeof backup['mqtt'] === 'object') {\n    let mqtt = global.get('mqtt') || {};\n    for (const k in backup['mqtt']) {\n        if (typeof mqtt[k] !== 'undefined') {\n            mqtt[k] = backup['mqtt'][k];\n        }\n    }\n    global.set('mqtt', backup['mqtt']);\n}\n\n// Domotic settings\nfor (const k of ['room', 'parent', 'entity', 'block', 'calendar', 'energy', 'scene']) {\n    if (typeof backup[k] === 'object' && backup[k] !== null) {\n        global.set(k, backup[k]);\n    }\n}\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success;\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Hide dialog\nmsg.hide = ['ui - dialog - config - backup'];\nmsg = await node.linkcall('common - ui - group', msg);\n\nreturn;",
+        "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -21712,7 +21740,11 @@
         "libs": [],
         "x": 890,
         "y": 680,
-        "wires": []
+        "wires": [
+            [
+                "5341f4f6f18fed9e"
+            ]
+        ]
     },
     {
         "id": "0a03e215965bde48",
@@ -21959,7 +21991,7 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\n// Check form\nif (msg.payload.id === '' || global.get('room[\"base\"][\"' + msg.payload.id + '\"]') === 'object') {\n\n    return;\n}\n\nmsg.payload.outdoor = msg.payload.outdoor ? 1 : 0;\n\nglobal.set('room[\"base\"][\"' + msg.payload.id + '\"]', msg.payload);\n\nmsg.payload = '';\nmsg.enabled = true;\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success || 'Successfully saved';\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Hide dialog\nmsg.hide = ['ui - dialog - config - room'];\nmsg = await node.linkcall('common - ui - group', msg);\n\nreturn;",
+        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.hmi.level !== 'admin') {\n\n    return;\n}\n\n// Check form\nif (msg.payload.id === '' || global.get('room[\"base\"][\"' + msg.payload.id + '\"]') === 'object') {\n\n    return;\n}\n\nmsg.payload.outdoor = msg.payload.outdoor ? 1 : 0;\n\nglobal.set('room[\"base\"][\"' + msg.payload.id + '\"]', msg.payload);\n\nmsg.payload = '';\nmsg.enabled = true;\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success || 'Successfully saved';\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Hide dialog\nmsg.hide = ['ui - dialog - config - room'];\nmsg = await node.linkcall('common - ui - group', msg);\n\nreturn;",
         "outputs": 0,
         "timeout": 0,
         "noerr": 0,
@@ -21976,8 +22008,8 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\n// Check form\nif (msg.payload.login === 'admin'\n    || msg.payload.login === '' \n    || msg.payload.pass === '' \n    || msg.payload.level === '' \n    || msg.payload.lang === ''\n) {\n\n    return;\n}\n\nmsg = await node.linkcall('config - user - hash', msg);\n\nlet auth = global.get('auth'); // autoupdate\n\nauth[msg.payload.login] = msg.payload;\n\nmsg.payload = '';\nmsg.enabled = true;\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success || 'Successfully saved';\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Hide dialog\nmsg.hide = ['ui - dialog - config - user'];\nmsg = await node.linkcall('common - ui - group', msg);\n\nreturn;",
-        "outputs": 0,
+        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.hmi.level !== 'admin') {\n\n    return;\n}\n\n// Login is checked in lower case on connection\nmsg.payload.login = (typeof msg.payload.login === 'string' ? msg.payload.login : '').trim().toLowerCase();\n\n// Check form\nif (msg.payload.login === 'admin'\n    || msg.payload.login === ''\n    || msg.payload.pass === ''\n    || msg.payload.level === ''\n    || msg.payload.lang === ''\n) {\n\n    return;\n}\n\nmsg = await node.linkcall('config - user - hash', msg);\n\nlet auth = global.get('auth'); // autoupdate\n\nauth[msg.payload.login] = msg.payload;\n\n// Save users file\nnode.send({ 'payload': '' });\n\nmsg.payload = '';\nmsg.enabled = true;\n\n// Notice\nmsg.notice = msg.dictionary.notice.save_success || 'Successfully saved';\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Hide dialog\nmsg.hide = ['ui - dialog - config - user'];\nmsg = await node.linkcall('common - ui - group', msg);\n\nreturn;",
+        "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -21985,7 +22017,11 @@
         "libs": [],
         "x": 890,
         "y": 980,
-        "wires": []
+        "wires": [
+            [
+                "5341f4f6f18fed9e"
+            ]
+        ]
     },
     {
         "id": "42197ac1cfaed4ed",
@@ -22148,6 +22184,203 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "ae383c95503c0c9c",
+        "type": "function",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "name": "data",
+        "func": "\n// Check display\nmsg = await node.linkcall('common - ui - enable', msg);\n\nif (!msg.enabled) {\n\n    return [msg, msg];\n}\n\n// Title\nmsg.payload = msg.dictionary.config.users || 'Users';\nnode.send([msg, null]);\n\n// Get memories\nconst auth = global.get('auth') || {}; // read\nconst user = global.get('user') || {}; // read\nconst colors = { ...(global.get('describe.color') || {}) };\n\n// Count opened sessions by login\nlet sessions = {};\nfor (const s in user) {\n    const login = (user[s] || {})['login'] || '';\n    if (login !== '') {\n        sessions[login] = (sessions[login] || 0) + 1;\n    }\n}\n\n// Rights: an admin manages every other user, a parent only kids and visitors, nobody manages himself\nconst rank = { 'visitor': 0, 'kid': 1, 'parent': 2, 'admin': 3 };\nconst manage = (login) => {\n    if (typeof auth[login] !== 'object' || login === msg.hmi.login) {\n\n        return false;\n    }\n    if (msg.hmi.level === 'admin') {\n\n        return true;\n    }\n    if (msg.hmi.level === 'parent') {\n\n        return (rank[auth[login]['level']] ?? rank.admin) < rank.parent;\n    }\n\n    return false;\n};\n\n// Sort by level then login\nconst logins = Object.keys(auth).sort((a, b) =>\n    ((rank[auth[b]['level']] ?? -1) - (rank[auth[a]['level']] ?? -1)) || a.localeCompare(b)\n);\n\nmsg.payload = [];\nfor (const login of logins) {\n    const allowed = manage(login);\n    const count = sessions[login] || 0;\n    const level = auth[login]['level'] || '';\n    const lang = auth[login]['lang'] || '';\n\n    msg.payload.push({\n        'id': login,\n        'login': login,\n        'level': msg.dictionary.option_level[level] || level,\n        'lang': msg.dictionary.config['user_lang_' + lang] || lang,\n        'connected': '<i class=\"dknr-row-icon mdi mdi-' + (count > 0 ? 'account-check' : 'account-off-outline') + '\" style=\"color:' + (count > 0 ? colors.theme : colors.empty) + '\" title=\"' + (count > 0 ? (msg.dictionary.config.users_connected || 'Connected') + ' (' + count + ')' : '') + '\"></i>',\n        // An empty button is hidden (see style)\n        'disconnect': allowed && count > 0 ? (msg.dictionary.config.users_disconnect || 'Disconnect') : '',\n        'delete': allowed && login !== 'admin' ? (msg.dictionary.config.users_delete || 'Delete') : ''\n    });\n}\n\nreturn [null, msg];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 1160,
+        "wires": [
+            [
+                "82b748fa728966db"
+            ],
+            [
+                "5da588352b9bed1c"
+            ]
+        ]
+    },
+    {
+        "id": "82b748fa728966db",
+        "type": "ui-text",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "efcee5feb0d7b078",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "config - users - title",
+        "label": "",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "dknr-title",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 640,
+        "y": 1160,
+        "wires": []
+    },
+    {
+        "id": "5da588352b9bed1c",
+        "type": "ui-table",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "efcee5feb0d7b078",
+        "name": "config - users - table",
+        "label": "",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "maxrows": 0,
+        "passthru": false,
+        "autocols": false,
+        "showSearch": false,
+        "deselect": true,
+        "selectionType": "none",
+        "columns": [
+            {
+                "title": "",
+                "key": "login",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "level",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "lang",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "connected",
+                "keyType": "key",
+                "type": "html",
+                "width": "20px",
+                "align": "center"
+            },
+            {
+                "title": "",
+                "key": "disconnect",
+                "keyType": "key",
+                "type": "button",
+                "width": "",
+                "align": "end"
+            },
+            {
+                "title": "",
+                "key": "delete",
+                "keyType": "key",
+                "type": "button",
+                "width": "",
+                "align": "end"
+            }
+        ],
+        "mobileBreakpoint": "sm",
+        "mobileBreakpointType": "defaults",
+        "action": "replace",
+        "className": "",
+        "x": 640,
+        "y": 1220,
+        "wires": [
+            [
+                "48f5b9d6feea2585"
+            ]
+        ]
+    },
+    {
+        "id": "48f5b9d6feea2585",
+        "type": "function",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "name": "data",
+        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\nif (msg.action !== 'button_click' || !['disconnect', 'delete'].includes(msg.column)) {\n\n    return;\n}\n\n// Get memories\nlet auth = global.get('auth'); // autoupdate\nlet user = global.get('user'); // autoupdate\nlet form = global.get('form'); // autoupdate\n\nconst login = (msg.payload || {})['id'] || '';\n\n// Rights: an admin manages every other user, a parent only kids and visitors, nobody manages himself\nconst rank = { 'visitor': 0, 'kid': 1, 'parent': 2, 'admin': 3 };\nconst manage = (login) => {\n    if (typeof auth[login] !== 'object' || login === msg.hmi.login) {\n\n        return false;\n    }\n    if (msg.hmi.level === 'admin') {\n\n        return true;\n    }\n    if (msg.hmi.level === 'parent') {\n\n        return (rank[auth[login]['level']] ?? rank.admin) < rank.parent;\n    }\n\n    return false;\n};\n\n// Check rights again, the main admin account is never deleted\nif (!manage(login) || (msg.column === 'delete' && login === 'admin')) {\n    msg.notice = msg.dictionary.config.users_denied || 'Action not allowed';\n    msg = await node.linkcall('common - ui - notice', msg);\n\n    return;\n}\n\n// Close user sessions and send their browsers back to the auth page\nconst page = global.get('describe.page.auth.name') || 'ui - page - auth';\nfor (const s in user) {\n    if ((user[s] || {})['login'] === login) {\n        delete user[s];\n        delete form[s];\n\n        node.send([null, null, { 'payload': page, '_client': { 'socketId': s } }]);\n    }\n}\n\nif (msg.column === 'delete') {\n    delete auth[login];\n\n    // Save users file\n    node.send([null, { 'payload': '' }, null]);\n\n    msg.notice = msg.dictionary.config.users_deleted || 'User deleted';\n} else {\n    msg.notice = msg.dictionary.config.users_disconnected || 'User disconnected';\n}\n\n// Notice\nmsg = await node.linkcall('common - ui - notice', msg);\n\n// Refresh list\nmsg.enabled = true;\nmsg.payload = '';\n\nreturn [msg, null, null];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 890,
+        "y": 1220,
+        "wires": [
+            [
+                "ae383c95503c0c9c"
+            ],
+            [
+                "7b3d122aba8d3a0a"
+            ],
+            [
+                "838cadd8f49f5c48"
+            ]
+        ]
+    },
+    {
+        "id": "5341f4f6f18fed9e",
+        "type": "link out",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "name": "config - user - write",
+        "mode": "link",
+        "links": [
+            "b75938c74c41ca5e"
+        ],
+        "x": 1015,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "7b3d122aba8d3a0a",
+        "type": "link out",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "name": "config - users - write",
+        "mode": "link",
+        "links": [
+            "b75938c74c41ca5e"
+        ],
+        "x": 1015,
+        "y": 1220,
+        "wires": []
+    },
+    {
+        "id": "838cadd8f49f5c48",
+        "type": "link out",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "name": "config - users - control",
+        "mode": "link",
+        "links": [
+            "92ad60b55f15242c"
+        ],
+        "x": 1015,
+        "y": 1260,
+        "wires": []
     },
     {
         "id": "85a6028250f92107",
