@@ -43,6 +43,9 @@ Le fichier docker-compose.yaml à la racine du dépôt lance **InfluxDB** et **D
 * **DKNR_USERNAME** : login de l'interface node-red et d'InfluxDB.
 * **DKNR_PASSWORD** : mot de passe de l'interface node-red et d'InfluxDB.
 * **DKNR_SECRET**   : un mot secret pour encrypter les credits, utilisé aussi comme jeton d'InfluxDB.
+* **DKNR_ADMIN_PASSWORD** (facultatif) : mot de passe du compte `admin` du tableau de bord. À défaut, c'est **DKNR_PASSWORD**.
+
+Le mot de passe du compte `admin` du tableau de bord ne se change pas dans l'interface : il est appliqué à chaque démarrage depuis ces variables. Pour le changer, modifiez la variable et redémarrez le conteneur.
 
 Le tableau de bord DKNR est disponible sur `http://<ip du serveur docker>:1880/dashboard` et l'éditeur Node-RED sur `http://<ip du serveur docker>:1880/admin`.
 

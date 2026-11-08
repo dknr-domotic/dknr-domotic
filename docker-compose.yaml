@@ -2,6 +2,8 @@
 # - DKNR_USERNAME
 # - DKNR_PASSWORD
 # - DKNR_SECRET
+# Optional:
+# - DKNR_ADMIN_PASSWORD (dashboard admin password, DKNR_PASSWORD if empty)
 #
 name: DKNRDomotic
 
@@ -55,6 +57,7 @@ services:
       DKNR_USERNAME: ${DKNR_USERNAME}
       DKNR_PASSWORD: ${DKNR_PASSWORD}
       DKNR_SECRET: ${DKNR_SECRET}
+      DKNR_ADMIN_PASSWORD: ${DKNR_ADMIN_PASSWORD:-}
     ports:
       - 1880:1880
     networks:
