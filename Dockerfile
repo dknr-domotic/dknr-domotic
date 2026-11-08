@@ -9,13 +9,13 @@ USER root
 ENV DKNR_USERNAME=admin \
 	DKNR_PASSWORD=admin \
       DKNR_SECRET=dkdomotic \
-      DKNR_REPOSITORY=https://github.com/JcDenis/dknr-domotic \
+      DKNR_REPOSITORY=https://github.com/dknr-domotic/dknr-domotic \
       NODE_RED_ENABLE_PROJECTS=true \
 	TZ=Europe\Paris
 
 # Image label
 LABEL org.opencontainers.image.authors="Jean-Christian Paul Denis" \
-      org.opencontainers.image.source="https://github.com/JcDenis/dknr-domotic" \
+      org.opencontainers.image.source="https://github.com/dknr-domotic/dknr-domotic" \
       org.opencontainers.image.title="DKNR Domotic" \
       org.opencontainers.image.description="Domotic web UI customized to my needs" \
       org.opencontainers.image.licenses="AGPL-3.0"

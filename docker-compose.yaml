@@ -43,7 +43,7 @@ services:
         max-file: "5"
   dknr_domotic:
     container_name: dknr_domotic
-    image: ghcr.io/jcdenis/dknr-domotic:dev
+    image: ghcr.io/dknr-domotic/dknr-domotic:dev
     restart: unless-stopped
     deploy:
       resources:

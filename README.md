@@ -2,8 +2,8 @@
 
 [![Release](https://img.shields.io/docker/v/jcpd/dknr-domotic?sort=semver)](https://img.shields.io/docker/v/jcpd/dknr-domotic?sort=semver)
 [![Pull](https://img.shields.io/docker/pulls/jcpd/dknr-domotic)](https://img.shields.io/docker/pulls/jcpd/dknr-domotic)
-[![Issue](https://img.shields.io/github/issues/jcdenis/dknr-domotic)](https://img.shields.io/github/issues/jcdenis/dknr-domotic)
-[![License](https://img.shields.io/github/license/jcdenis/dknr-domotic)](https://github.com/JcDenis/dknr-domotic/blob/master/LICENSE)
+[![Issue](https://img.shields.io/github/issues/dknr-domotic/dknr-domotic)](https://img.shields.io/github/issues/dknr-domotic/dknr-domotic)
+[![License](https://img.shields.io/github/license/dknr-domotic/dknr-domotic)](https://github.com/dknr-domotic/dknr-domotic/blob/master/LICENSE)
 
 
 ## A propos
@@ -31,7 +31,7 @@
 Le matériel exact dépend de l'installation, mais l'utilisation du projet nécessite généralement :
 
 * un serveur MQTT, partagé avec les autres projets DKNR.
-* au moins un projet DKNR publiant des entités (ex : [DKNR Zigbee](https://github.com/JcDenis/dknr-zigbee)).
+* au moins un projet DKNR publiant des entités (ex : [DKNR Zigbee](https://github.com/dknr-domotic/dknr-zigbee)).
 * une machine exécutant le logiciel docker.
 
 
@@ -99,16 +99,16 @@ DKNR Domotic est lui-même la source `dknr` : ses modes et capteurs internes son
 
 ## Contribuer
 
-Ce projet est **open-source**, vous pouvez participer en créant des [tickets](https://github.com/JcDenis/dknr-domotic/issues) ou en proposant de [requêtes](https://github.com/JcDenis/dknr-domotic/pulls) sur le dépôt github du projet.
+Ce projet est **open-source**, vous pouvez participer en créant des [tickets](https://github.com/dknr-domotic/dknr-domotic/issues) ou en proposant de [requêtes](https://github.com/dknr-domotic/dknr-domotic/pulls) sur le dépôt github du projet.
 
 
 ## Voir aussi
 
-- [DKNR Zigbee](https://github.com/JcDenis/dknr-zigbee)
-- [DKNR Z-Wave](https://github.com/JcDenis/dknr-zwave)
-- [DKNR RFXCom](https://github.com/JcDenis/dknr-rfxcom)
-- [DKNR Teleinfo](https://github.com/JcDenis/dknr-teleinfo)
-- [DKNR Nuki](https://github.com/JcDenis/dknr-nuki)
-- [DKNR Daikin](https://github.com/JcDenis/dknr-daikin)
-- [DKNR Zendure](https://github.com/JcDenis/dknr-zendure)
-- [DKNR APSystems](https://github.com/JcDenis/dknr-apsystems)
+- [DKNR Zigbee](https://github.com/dknr-domotic/dknr-zigbee)
+- [DKNR Z-Wave](https://github.com/dknr-domotic/dknr-zwave)
+- [DKNR RFXCom](https://github.com/dknr-domotic/dknr-rfxcom)
+- [DKNR Teleinfo](https://github.com/dknr-domotic/dknr-teleinfo)
+- [DKNR Nuki](https://github.com/dknr-domotic/dknr-nuki)
+- [DKNR Daikin](https://github.com/dknr-domotic/dknr-daikin)
+- [DKNR Zendure](https://github.com/dknr-domotic/dknr-zendure)
+- [DKNR APSystems](https://github.com/dknr-domotic/dknr-apsystems)
