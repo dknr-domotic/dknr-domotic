@@ -1,7 +1,7 @@
 {
     "name": "dknr-domotic",
     "description": "DKNR Domotic",
-    "version": "1.1",
+    "version": "1.2",
     "dependencies": {
         "@flowfuse/node-red-dashboard": "1.36.0",
         "node-red-contrib-cron-plus": "3.2.0",
