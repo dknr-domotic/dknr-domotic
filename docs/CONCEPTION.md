@@ -1,6 +1,6 @@
 # Conception de dknr-domotic
 
-Document de référence sur l'architecture et les conventions de dknr-domotic (état à la version 1.1, novembre 2026). À lire avant toute modification, et à tenir à jour quand une convention change.
+Document de référence sur l'architecture et les conventions de dknr-domotic (état à la version 1.2, novembre 2026). À lire avant toute modification, et à tenir à jour quand une convention change.
 
 
 ## Rôle
@@ -42,7 +42,7 @@ Données persistées (export / import sélectif depuis la page Configuration : a
 | `energy` | entités choisies pour l'énergie (puissances, batterie, compteurs, `preferred_tariff`...) |
 | `calendar`, `user`, `auth`, `mqtt`, `block` | calendrier, sessions des utilisateurs, comptes (rechargés depuis `user.json`), configuration MQTT, entités bloquées |
 
-Données de fonctionnement : `describe` (templates, éléments, routines par élément, unités textuelles, enums de la source dknr, pages), `dictionary`, `form` (formulaires par onglet, clé `msg.hmi.id`), `stop`, `boot`, `sourceboot` (heure de démarrage annoncée par chaque source).
+Données de fonctionnement : `describe` (templates, éléments, routines par élément, unités textuelles, enums de la source dknr, pages, niveaux d'accès `describe.access`), `dictionary`, `form` (formulaires par onglet, clé `msg.hmi.id`), `stop`, `boot`, `sourceboot` (heure de démarrage annoncée par chaque source).
 
 Les templates sont dans `describe.template` (nœud mémoire `c7b7c464c8142df7`) : `entity`, `discovery`, `source`, `parent`, `room`, `scene`, `trigger`, `routine`, `hmi`. **Toujours copier les objets imbriqués** (ex : `options`) au lieu de les partager avec le template.
 
@@ -122,16 +122,38 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 
 ## Utilisateurs
 
-* Niveaux : `admin`, `parent`, `kid`, `visitor`. Comptes dans `auth` (identifiant en minuscules, mot de passe bcrypt), sessions dans `user`.
+* Niveaux, du plus bas au plus haut : *(vide)* non connecté, `visitor`, `kid`, `parent`, `admin`. Comptes dans `auth` (identifiant en minuscules, mot de passe bcrypt), sessions dans `user`. Sans session, `msg.hmi.level` vaut `''` (template `hmi`).
 * Deux identifiants dans `msg.hmi` (`common - ui - hmi`) :
   * `msg.hmi.id` : l'onglet (`msg._client.socketId`, change à chaque rafraîchissement). Clé de `form` et des états de page dans le contexte flow (pièce affichée, sélection...).
   * `msg.hmi.session` : la session, clé de `user`. C'est `msg._client.clientId` de Dashboard 2 (≥ 1.36, rangé dans le `localStorage` du navigateur sous `nrdb-client-id`), partagé par les onglets d'un navigateur et conservé au rafraîchissement ; à défaut le `socketId`. Toujours utiliser `msg.hmi.session` pour lire ou écrire `user`.
 * Une session expire après la durée d'inactivité choisie dans Configuration > Divers (`session_duration` en heures dans le stockage `file` : 6, 24 ou 720, 720 par défaut), vérifiée par `common - ui - hmi` et `common - user - clean`. `user` est persistant (copié dans le stockage `file`), les sessions survivent au redémarrage.
 * Événements `ui-control` : `lost` (onglet fermé) supprime seulement `form` de l'onglet ; `connect` renvoie vers la page d'authentification seulement sans session ouverte, sinon l'onglet reste sur sa page et `change` vérifie les droits de la page. La déconnexion depuis la page d'authentification renvoie tous les onglets du navigateur (`msg._client.clientId`).
 * `auth` est rechargé au démarrage depuis `/data/backup/user.json` (pas depuis le stockage `file`) : toute modification des comptes (création, suppression, import) doit l'écrire par un lien vers `common - user - write`.
-* La page Configuration est ouverte aux niveaux `admin` et `parent`. Les entrées du menu sont filtrées par niveau (table `access` dans les nœuds data du menu et de la sélection, à garder identiques) : `parent` ne voit que la liste des utilisateurs. Les formulaires de configuration vérifient aussi le niveau `admin`.
 * Liste des utilisateurs (`ui - dialog - config - users`) : identifiant, niveau, langue, sessions ouvertes, boutons Déconnecter et Supprimer. Un `admin` agit sur tous les autres comptes, un `parent` seulement sur les `kid` et `visitor`, personne sur son propre compte ; le compte `admin` n'est jamais supprimé. Les droits sont recalculés à l'action. Déconnecter ferme les sessions du compte et renvoie ses navigateurs vers la page d'authentification (`ui-control` ciblé par `msg._client.clientId`, ou `socketId` pour une session sans clientId).
 * Un bouton de tableau dont le libellé est vide est masqué (style `.v-table td .v-btn:has(.v-btn__content:empty)`).
+
+### Accès par niveau
+
+* Chaque page déclare dans son nœud `page` un objet `access` : `{ '<action>': '<niveau minimal>' }`, rangé par `common - register - page` dans `describe.access[<page>]` (l'objet est retiré de `describe.page`). La clé `view` donne l'accès à la page (menu, redirection dans `common - ui - control`, affichage des groupes dans `common - ui - tab`). La page `auth` a `view: ''` (tout le monde).
+* Le link call **`common - user - access`** vérifie une clé `'<page>.<action>'` (ou une liste, toutes requises, ou au moins une avec `msg.access_any = true`) et rend `msg.allowed`. Le niveau d'un utilisateur sans `login` compte comme non connecté ; une clé inconnue est refusée. Avec `msg.access_notice = true`, un refus affiche la notice `access_denied`.
+* **Tout traitement d'action vérifie sa clé côté serveur**, juste après `common - ui - hmi`, avant de modifier quoi que ce soit : Dashboard 2 accepte les messages d'un widget même masqué ou sur une page non autorisée. Le masquage n'est qu'un confort d'affichage.
+* Affichage : un nœud data qui alimente un groupe ou un dialogue réservé vérifie la même clé et ne remplit rien sans accès (`msg.enabled = false` ou sortie immédiate), pour ne pas envoyer de données au navigateur (ex. mot de passe MQTT). Un bouton de tableau sans accès a un libellé vide (masqué). Les menus (`room`, `config`, `energy`, `calendar`) ne listent que les entrées accessibles et se masquent s'il n'en reste aucune.
+* `visitor` voit ce que voit `kid` (clés `view` à `visitor`) mais aucune action n'est à `visitor` : dans le détail d'une entité, les commandes sont affichées désactivées (`msg.readonly` sans `room.command`).
+* Niveaux en place (novembre 2026) :
+
+| Page | Action → niveau minimal |
+|---|---|
+| home | `view`, `room` → visitor |
+| energy | `view` → visitor ; `entity` → admin |
+| calendar | `view` → visitor ; `add`, `delete` → parent |
+| room | `view` → visitor ; `command` → kid ; `scene`, `confort`, `workday` → parent ; `room`, `camera`, `location`, `map` → admin |
+| scene | `view`, `edit`, `enable`, `delete`, `trigger`, `timer` → parent |
+| entity | `view`, `edit`, `forget` → admin |
+| config | `view`, `daily`, `users` → parent ; `mqtt`, `various`, `backup`, `user`, `room` → admin |
+| auth | `view` → tout le monde |
+
+* Configuration : les entrées du menu correspondent à des clés (`various` s'ouvre avec `config.various` ou `config.daily` ; un `parent` n'y voit que la remise à zéro du quotidien). La table de correspondance est dans les nœuds data du menu et de la sélection, à garder identiques.
+* Lien d'export : jeton aléatoire de 64 caractères (`crypto`), à usage unique, valable 5 minutes.
 
 
 ## Pistes et points ouverts
