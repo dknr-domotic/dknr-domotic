@@ -21,7 +21,7 @@
 - **Calendrier** : anniversaires et événements, affichés sur l'accueil.
 - **Entités** : nom, pièce, élément, groupe et unité de chaque entité, par source.
 - **Modes de la maison** (source interne `dknr`) : automatisme général, jour / nuit, lumières, volets, chauffe-eau, chauffage, ventilation, son, en automatique, forcés ou manuels.
-- **Utilisateurs** avec niveau d'accès et langue (français, anglais), liste des comptes pour déconnecter ou supprimer un utilisateur (administrateur et parent).
+- **Utilisateurs** avec niveau d'accès et langue (français, anglais), session conservée au rafraîchissement de la page et au redémarrage (durée réglable : 6 h, 24 h ou 30 jours), liste des comptes pour déconnecter ou supprimer un utilisateur (administrateur et parent).
 - **Historique** des valeurs dans InfluxDB.
 - **Sauvegarde et restauration** de la configuration, en choisissant les données à exporter.
 

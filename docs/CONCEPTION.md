@@ -40,9 +40,9 @@ Données persistées (export / import sélectif depuis la page Configuration : a
 | `room` | `base` (pièces : id, nom, `outdoor` 1/0), `confort` (plages par pièce), `workday` (jours `d0`..`d6` à 1/0 par pièce), `location`, `map`, `camera` |
 | `scene` | scènes par entité cible |
 | `energy` | entités choisies pour l'énergie (puissances, batterie, compteurs, `preferred_tariff`...) |
-| `calendar`, `user`, `auth`, `mqtt`, `block` | calendrier, utilisateurs, authentification, configuration MQTT, entités bloquées |
+| `calendar`, `user`, `auth`, `mqtt`, `block` | calendrier, sessions des utilisateurs, comptes (rechargés depuis `user.json`), configuration MQTT, entités bloquées |
 
-Données de fonctionnement : `describe` (templates, éléments, routines par élément, unités textuelles, enums de la source dknr, pages), `dictionary`, `form` (formulaires par interface), `stop`, `boot`, `sourceboot` (heure de démarrage annoncée par chaque source).
+Données de fonctionnement : `describe` (templates, éléments, routines par élément, unités textuelles, enums de la source dknr, pages), `dictionary`, `form` (formulaires par onglet, clé `msg.hmi.id`), `stop`, `boot`, `sourceboot` (heure de démarrage annoncée par chaque source).
 
 Les templates sont dans `describe.template` (nœud mémoire `c7b7c464c8142df7`) : `entity`, `discovery`, `source`, `parent`, `room`, `scene`, `trigger`, `routine`, `hmi`. **Toujours copier les objets imbriqués** (ex : `options`) au lieu de les partager avec le template.
 
@@ -122,10 +122,15 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 
 ## Utilisateurs
 
-* Niveaux : `admin`, `parent`, `kid`, `visitor`. Comptes dans `auth` (identifiant en minuscules, mot de passe bcrypt), sessions ouvertes dans `user` (par socket du tableau de bord, supprimées à la déconnexion du navigateur).
+* Niveaux : `admin`, `parent`, `kid`, `visitor`. Comptes dans `auth` (identifiant en minuscules, mot de passe bcrypt), sessions dans `user`.
+* Deux identifiants dans `msg.hmi` (`common - ui - hmi`) :
+  * `msg.hmi.id` : l'onglet (`msg._client.socketId`, change à chaque rafraîchissement). Clé de `form` et des états de page dans le contexte flow (pièce affichée, sélection...).
+  * `msg.hmi.session` : la session, clé de `user`. C'est `msg._client.clientId` de Dashboard 2 (≥ 1.36, rangé dans le `localStorage` du navigateur sous `nrdb-client-id`), partagé par les onglets d'un navigateur et conservé au rafraîchissement ; à défaut le `socketId`. Toujours utiliser `msg.hmi.session` pour lire ou écrire `user`.
+* Une session expire après la durée d'inactivité choisie dans Configuration > Divers (`session_duration` en heures dans le stockage `file` : 6, 24 ou 720, 720 par défaut), vérifiée par `common - ui - hmi` et `common - user - clean`. `user` est persistant (copié dans le stockage `file`), les sessions survivent au redémarrage.
+* Événements `ui-control` : `lost` (onglet fermé) supprime seulement `form` de l'onglet ; `connect` renvoie vers la page d'authentification seulement sans session ouverte, sinon l'onglet reste sur sa page et `change` vérifie les droits de la page. La déconnexion depuis la page d'authentification renvoie tous les onglets du navigateur (`msg._client.clientId`).
 * `auth` est rechargé au démarrage depuis `/data/backup/user.json` (pas depuis le stockage `file`) : toute modification des comptes (création, suppression, import) doit l'écrire par un lien vers `common - user - write`.
 * La page Configuration est ouverte aux niveaux `admin` et `parent`. Les entrées du menu sont filtrées par niveau (table `access` dans les nœuds data du menu et de la sélection, à garder identiques) : `parent` ne voit que la liste des utilisateurs. Les formulaires de configuration vérifient aussi le niveau `admin`.
-* Liste des utilisateurs (`ui - dialog - config - users`) : identifiant, niveau, langue, sessions ouvertes, boutons Déconnecter et Supprimer. Un `admin` agit sur tous les autres comptes, un `parent` seulement sur les `kid` et `visitor`, personne sur son propre compte ; le compte `admin` n'est jamais supprimé. Les droits sont recalculés à l'action. Déconnecter ferme les sessions du compte et renvoie ses navigateurs vers la page d'authentification (`ui-control` ciblé par `msg._client.socketId`).
+* Liste des utilisateurs (`ui - dialog - config - users`) : identifiant, niveau, langue, sessions ouvertes, boutons Déconnecter et Supprimer. Un `admin` agit sur tous les autres comptes, un `parent` seulement sur les `kid` et `visitor`, personne sur son propre compte ; le compte `admin` n'est jamais supprimé. Les droits sont recalculés à l'action. Déconnecter ferme les sessions du compte et renvoie ses navigateurs vers la page d'authentification (`ui-control` ciblé par `msg._client.clientId`, ou `socketId` pour une session sans clientId).
 * Un bouton de tableau dont le libellé est vide est masqué (style `.v-table td .v-btn:has(.v-btn__content:empty)`).
 
 
