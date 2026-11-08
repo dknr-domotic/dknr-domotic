@@ -1,6 +1,6 @@
 # Conception de dknr-domotic
 
-Document de référence sur l'architecture et les conventions de dknr-domotic (état à la version 1.2, novembre 2026). À lire avant toute modification, et à tenir à jour quand une convention change.
+Document de référence sur l'architecture et les conventions de dknr-domotic (état à la version 1.3, novembre 2026). À lire avant toute modification, et à tenir à jour quand une convention change.
 
 
 ## Rôle
