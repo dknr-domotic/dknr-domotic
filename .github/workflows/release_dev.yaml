@@ -62,7 +62,7 @@ jobs:
 
       - name: Docker Scout stable
         id: docker-scout
-        uses: docker/scout-action@v1.27.0
+        uses: docker/scout-action@v1.29.0
         with:
           command: environment,quickview,cves
           image: ${{ env.DKNR_NAMESPACE }}/${{ env.DKNR_IMAGE }}:dev
