@@ -10,6 +10,8 @@
 
 **dknr-domotic** est le tableau de bord et le cerveau des projets DKNR. Il réunit dans une même interface toutes les entités publiées sur MQTT par les autres projets DKNR (Zigbee, Z-Wave, RFXCom, Teleinfo, Nuki, Daikin, Zendure, APSystems...), les range par pièce, historise leurs valeurs et les pilote par des scènes, le tout en local.
 
+La documentation détaillée est sur [dknr-domotic.github.io](https://dknr-domotic.github.io/domotic/).
+
 
 ## Fonctionnalités
 
