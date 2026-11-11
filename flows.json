@@ -5086,7 +5086,7 @@
         "z": "4bc72a1112cb448c",
         "g": "17fbda7c7b72d170",
         "name": "data",
-        "func": "const mqtt = global.get('mqtt');\n\nif (global.get('stop') || !mqtt.enabled) {\n\n    return;\n}\n\nlet source = global.get('source'); // autoupdate\nlet parent = global.get('parent'); // autoupdate\nlet discovery = global.get('discovery'); // autoupdate\nlet entity = global.get('entity'); // autoupdate\nconst block = global.get('block'); // read\nconst template = global.get('describe.template'); // read\n\nmsg.topic = msg.topic.slice(mqtt.topic.length + 1);\nlet path = msg.topic.split('/');\nlet action = path.shift();\nmsg.uid = path.join('/');\n\nif (action === 'discovery') {\n    // discovery source\n    if (path.length === 1) {\n        // Source (re)started: its replayed values must not trigger scenes (see routine - loop)\n        global.set('sourceboot[\"' + path[0] + '\"]', Date.now());\n\n        if (typeof msg.payload === 'string' && msg.payload === '') {\n            // delete source[path[0]];\n        }\n        else if (typeof msg.payload === 'object') {\n            if (typeof source[path[0]] !== 'object') {\n                source[path[0]] = { ...template.source };\n            }\n            for (const k in template.source) {\n                if (msg.payload.hasOwnProperty(k)) {\n                    source[path[0]][k] = msg.payload[k];\n                }\n            }\n        }\n    }\n    // discovery parent\n    else if (path.length === 2) {\n        if (typeof msg.payload === 'string' && msg.payload === '') {\n            // delete parent[path[1]];\n        }\n        else if (typeof msg.payload === 'object' && (msg.payload.name || '') !== '' && typeof parent[path[1]] !== 'object') {\n            parent[path[1]] = { ...template.parent, ...{ 'id': path[1], 'name': msg.payload.name.replace('_', ' ') } };\n        }\n    }\n    // discovery entity\n    else if (path.length === 3) {\n        node.status({\n            'fill': 'blue',\n            'text': action + ': ' + msg.uid\n        });\n\n        if (typeof msg.payload === 'string' && msg.payload === '') {\n            // delete discovery[uid];\n        }\n        else if (typeof msg.payload === 'object') {\n            if (typeof discovery[msg.uid] !== 'object') {\n                discovery[msg.uid] = { ...template.discovery, 'options': {} };\n            }\n            for (const k in template.discovery) {\n                if (msg.payload.hasOwnProperty(k)) {\n                    if (k === 'options') {\n                        // options must be an object { value: label }, a list is converted\n                        let options = {};\n                        if (Array.isArray(msg.payload[k])) {\n                            msg.payload[k].forEach(v => { options[v] = v; });\n                        }\n                        else if (typeof msg.payload[k] === 'object' && msg.payload[k] !== null) {\n                            options = { ...msg.payload[k] };\n                        }\n                        discovery[msg.uid][k] = options;\n                    }\n                    else if (typeof msg.payload[k] === 'object') {\n                        discovery[msg.uid][k] = { ...msg.payload[k] };\n                    }\n                    else {\n                        discovery[msg.uid][k] = msg.payload[k];\n                    }\n                }\n            }\n            \n            // Create entity if it does not exist, or complete it from discovery\n            if (block[msg.uid] !== true) {\n                const exists = typeof entity[msg.uid] === 'object';\n                const seen = exists ? entity[msg.uid]['seen'] : Date.now();\n\n                msg = await node.linkcall('common - entity - merge', msg);\n\n                // Discovery is not a value: keep last seen time of existing entity\n                entity[msg.uid]['seen'] = seen;\n\n                if (!exists) {\n                    node.status({\n                        'fill': 'green',\n                        'text': 'new entity: ' + msg.uid\n                    });\n                }\n            }\n        }\n    }\n}\nelse if (action === 'get' && path.length === 3) {\n\n    // Ignore blocked entity\n    if (block[msg.uid] === true) {\n\n        return;\n    }\n\n    // update entity\n    msg = await node.linkcall('common - entity - merge', msg);\n\n    // DKNR binary values are 1 / 0 (ON / OFF from older versions)\n    let value = msg.payload;\n    if (typeof discovery[msg.uid] === 'object' && discovery[msg.uid]['type'] === 'binary') {\n        value = [true, 1, '1', 'ON', 'on', 'On', 'true'].includes(value) ? 1 : 0;\n    }\n\n    const old_value = entity[msg.uid]['value'];\n    entity[msg.uid]['value'] = value;\n\n    /* same info in next node\n    node.status({\n        'fill': old_value !== value ? 'green' : 'yellow',\n        'text': action + ' : ' + msg.uid + ' : ' + value\n    });\n    */\n\n    // Send entity event (even if value is unchanged, see msg.repeat)\n    msg.topic = msg.uid;\n    msg.payload = value;\n    msg.repeat = entity[msg.uid]['element'] !== 'remote' && old_value === value;\n\n    delete msg.qos;\n    delete msg.retain;\n    delete msg.uid;\n\n    node.send([msg, null]);\n}\n// Command for the local dknr source (see common - dknr)\nelse if (action === 'set' && path.length === 3 && path[0] === 'dknr') {\n    msg.topic = msg.uid;\n\n    delete msg.qos;\n    delete msg.retain;\n    delete msg.uid;\n\n    node.send([null, msg]);\n}\n\nreturn;",
+        "func": "const mqtt = global.get('mqtt');\n\nif (global.get('stop') || !mqtt.enabled) {\n\n    return;\n}\n\nlet source = global.get('source'); // autoupdate\nlet parent = global.get('parent'); // autoupdate\nlet discovery = global.get('discovery'); // autoupdate\nlet entity = global.get('entity'); // autoupdate\nconst block = global.get('block'); // read\nconst template = global.get('describe.template'); // read\n\nmsg.topic = msg.topic.slice(mqtt.topic.length + 1);\nlet path = msg.topic.split('/');\nlet action = path.shift();\nmsg.uid = path.join('/');\n\nif (action === 'discovery') {\n    // discovery source\n    if (path.length === 1) {\n        // Source (re)started: its replayed values must not trigger scenes (see routine - loop)\n        global.set('sourceboot[\"' + path[0] + '\"]', Date.now());\n\n        if (typeof msg.payload === 'string' && msg.payload === '') {\n            // delete source[path[0]];\n        }\n        else if (typeof msg.payload === 'object') {\n            if (typeof source[path[0]] !== 'object') {\n                source[path[0]] = { ...template.source };\n            }\n            for (const k in template.source) {\n                if (msg.payload.hasOwnProperty(k)) {\n                    source[path[0]][k] = msg.payload[k];\n                }\n            }\n        }\n    }\n    // discovery parent\n    else if (path.length === 2) {\n        if (typeof msg.payload === 'string' && msg.payload === '') {\n            // delete parent[path[1]];\n        }\n        else if (typeof msg.payload === 'object' && (msg.payload.name || '') !== '' && typeof parent[path[1]] !== 'object') {\n            parent[path[1]] = { ...template.parent, ...{ 'id': path[1], 'name': msg.payload.name.replace('_', ' ') } };\n        }\n    }\n    // discovery entity\n    else if (path.length === 3) {\n        node.status({\n            'fill': 'blue',\n            'text': action + ': ' + msg.uid\n        });\n\n        if (typeof msg.payload === 'string' && msg.payload === '') {\n            // delete discovery[uid];\n        }\n        else if (typeof msg.payload === 'object') {\n            if (typeof discovery[msg.uid] !== 'object') {\n                discovery[msg.uid] = { ...template.discovery, 'options': {} };\n            }\n            for (const k in template.discovery) {\n                if (msg.payload.hasOwnProperty(k)) {\n                    if (k === 'options') {\n                        // options must be an object { value: label }, a list is converted\n                        let options = {};\n                        if (Array.isArray(msg.payload[k])) {\n                            msg.payload[k].forEach(v => { options[v] = v; });\n                        }\n                        else if (typeof msg.payload[k] === 'object' && msg.payload[k] !== null) {\n                            options = { ...msg.payload[k] };\n                        }\n                        discovery[msg.uid][k] = options;\n                    }\n                    else if (typeof msg.payload[k] === 'object') {\n                        discovery[msg.uid][k] = { ...msg.payload[k] };\n                    }\n                    else {\n                        discovery[msg.uid][k] = msg.payload[k];\n                    }\n                }\n            }\n            \n            // Create entity if it does not exist, or complete it from discovery\n            if (block[msg.uid] !== true) {\n                const exists = typeof entity[msg.uid] === 'object';\n                const seen = exists ? entity[msg.uid]['seen'] : Date.now();\n\n                msg = await node.linkcall('common - entity - merge', msg);\n\n                // Discovery is not a value: keep last seen time of existing entity\n                entity[msg.uid]['seen'] = seen;\n\n                if (!exists) {\n                    node.status({\n                        'fill': 'green',\n                        'text': 'new entity: ' + msg.uid\n                    });\n                }\n            }\n        }\n    }\n}\n// Rooms published by this dashboard (see common - room - mqtt): remember what the broker holds\nelse if ((action === 'room' || (action === 'data' && path[0] === 'room')) && path.length === 3) {\n    let rooms = global.get('roommqtt', 'memoryOnly');\n    if (typeof rooms !== 'object' || rooms === null) {\n        rooms = {};\n    }\n    rooms.broker = rooms.broker || {};\n    if (msg.payload === '' || msg.payload === null || typeof msg.payload === 'undefined') {\n        delete rooms.broker[msg.topic];\n    }\n    else {\n        rooms.broker[msg.topic] = true;\n    }\n    global.set('roommqtt', rooms, 'memoryOnly');\n}\nelse if (action === 'get' && path.length === 3) {\n\n    // Ignore blocked entity\n    if (block[msg.uid] === true) {\n\n        return;\n    }\n\n    // update entity\n    msg = await node.linkcall('common - entity - merge', msg);\n\n    // DKNR binary values are 1 / 0 (ON / OFF from older versions)\n    let value = msg.payload;\n    if (typeof discovery[msg.uid] === 'object' && discovery[msg.uid]['type'] === 'binary') {\n        value = [true, 1, '1', 'ON', 'on', 'On', 'true'].includes(value) ? 1 : 0;\n    }\n\n    const old_value = entity[msg.uid]['value'];\n    entity[msg.uid]['value'] = value;\n\n    /* same info in next node\n    node.status({\n        'fill': old_value !== value ? 'green' : 'yellow',\n        'text': action + ' : ' + msg.uid + ' : ' + value\n    });\n    */\n\n    // Send entity event (even if value is unchanged, see msg.repeat)\n    msg.topic = msg.uid;\n    msg.payload = value;\n    msg.repeat = entity[msg.uid]['element'] !== 'remote' && old_value === value;\n\n    delete msg.qos;\n    delete msg.retain;\n    delete msg.uid;\n\n    node.send([msg, null]);\n}\n// Command for the local dknr source (see common - dknr)\nelse if (action === 'set' && path.length === 3 && path[0] === 'dknr') {\n    msg.topic = msg.uid;\n\n    delete msg.qos;\n    delete msg.retain;\n    delete msg.uid;\n\n    node.send([null, msg]);\n}\n\nreturn;",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -7270,6 +7270,161 @@
             [
                 "eea756fba5f3ad44"
             ]
+        ]
+    },
+    {
+        "id": "a0c86d73fdf1d8cd",
+        "type": "group",
+        "z": "4bc72a1112cb448c",
+        "name": "common - room - mqtt",
+        "style": {
+            "fill": "#ff0000",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "7ebc8160e021a4fe",
+            "4140b75dd2e863b3",
+            "0e2e046d4b0dfb9e",
+            "8c696e5cf94f6ed7",
+            "b0ada2887e0745d8",
+            "c1244e12b10aea92"
+        ],
+        "x": 104,
+        "y": 3839,
+        "w": 762,
+        "h": 142
+    },
+    {
+        "id": "7ebc8160e021a4fe",
+        "type": "inject",
+        "z": "4bc72a1112cb448c",
+        "g": "a0c86d73fdf1d8cd",
+        "name": "10s",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "30",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 230,
+        "y": 3880,
+        "wires": [
+            [
+                "4140b75dd2e863b3"
+            ]
+        ]
+    },
+    {
+        "id": "4140b75dd2e863b3",
+        "type": "function",
+        "z": "4bc72a1112cb448c",
+        "g": "a0c86d73fdf1d8cd",
+        "name": "publish",
+        "func": "/*\nPublish rooms on MQTT for the other DKNR projects (retained, topic = value):\n<topic>/room/<source>/<parent>/<entity> = room id of the entity\n<topic>/data/room/<id>/name = room name\n<topic>/data/room/<id>/outdoor = 1 / 0\nOnly changes are sent, an empty value clears a topic. Room topics found on the\nbroker and unknown here are cleared too (see common - entity - get).\n*/\n\nif (global.get('stop') === true || global.get('boot') === true) {\n\n    return;\n}\n\nconst mqtt = global.get('mqtt') || {};\nif (!mqtt.enabled || (mqtt.topic || '') === '') {\n\n    return;\n}\n\n// Get memories\nconst rooms = (global.get('room') || {}).base || {}; // read\nconst entity = global.get('entity') || {}; // read\nconst block = global.get('block') || {}; // read\n\nlet memory = global.get('roommqtt', 'memoryOnly');\nif (typeof memory !== 'object' || memory === null) {\n    memory = {};\n}\nmemory.sent = memory.sent || {}; // topic: value published by this node\nmemory.broker = memory.broker || {}; // topic: true, retained on the broker\n\n// Publish everything again from time to time (broker restarted without persistence)\nif (Date.now() - (memory.full || 0) > 6 * 3600000) {\n    memory.sent = {};\n    memory.full = Date.now();\n}\n\n// A room id is a topic level\nconst valid = (id) => typeof id === 'string' && id !== '' && !/[\\/+#]/.test(id);\n\nlet wanted = {};\nfor (const id in rooms) {\n    if (!valid(id) || typeof rooms[id] !== 'object') {\n        continue;\n    }\n    wanted['data/room/' + id + '/name'] = String(rooms[id].name || id);\n    wanted['data/room/' + id + '/outdoor'] = [1, '1', true].includes(rooms[id].outdoor) ? 1 : 0;\n}\nfor (const uid in entity) {\n    const id = (entity[uid] || {}).room;\n    if (block[uid] !== true && valid(id) && typeof wanted['data/room/' + id + '/name'] !== 'undefined' && uid.split('/').length === 3) {\n        wanted['room/' + uid] = id;\n    }\n}\n\nlet out = [];\nconst pub = (t, v) => out.push({ 'topic': mqtt.topic + '/' + t, 'payload': v, 'qos': 0, 'retain': true });\n\nfor (const t in wanted) {\n    if (memory.sent[t] !== wanted[t]) {\n        pub(t, wanted[t]);\n        memory.sent[t] = wanted[t];\n    }\n}\nfor (const t in memory.sent) {\n    if (typeof wanted[t] === 'undefined') {\n        pub(t, '');\n        delete memory.sent[t];\n        delete memory.broker[t];\n    }\n}\nfor (const t in memory.broker) {\n    if (typeof wanted[t] === 'undefined') {\n        pub(t, '');\n        delete memory.broker[t];\n    }\n}\n\nglobal.set('roommqtt', memory, 'memoryOnly');\n\nnode.status({\n    'fill': out.length ? 'green' : 'blue',\n    'text': Object.keys(wanted).length + ' topics, ' + out.length + ' sent'\n});\n\nif (out.length === 0) {\n\n    return;\n}\n\nreturn [out];\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 3880,
+        "wires": [
+            [
+                "0e2e046d4b0dfb9e"
+            ]
+        ]
+    },
+    {
+        "id": "0e2e046d4b0dfb9e",
+        "type": "delay",
+        "z": "4bc72a1112cb448c",
+        "g": "a0c86d73fdf1d8cd",
+        "name": "100/s",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "100",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 610,
+        "y": 3880,
+        "wires": [
+            [
+                "8c696e5cf94f6ed7"
+            ]
+        ]
+    },
+    {
+        "id": "8c696e5cf94f6ed7",
+        "type": "mqtt out",
+        "z": "4bc72a1112cb448c",
+        "g": "a0c86d73fdf1d8cd",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "2c5e094fee5ae877",
+        "x": 770,
+        "y": 3880,
+        "wires": []
+    },
+    {
+        "id": "b0ada2887e0745d8",
+        "type": "link in",
+        "z": "4bc72a1112cb448c",
+        "g": "a0c86d73fdf1d8cd",
+        "name": "common - room - reset",
+        "links": [
+            "c109171373a64bf6"
+        ],
+        "x": 145,
+        "y": 3940,
+        "wires": [
+            [
+                "c1244e12b10aea92"
+            ]
+        ]
+    },
+    {
+        "id": "c1244e12b10aea92",
+        "type": "function",
+        "z": "4bc72a1112cb448c",
+        "g": "a0c86d73fdf1d8cd",
+        "name": "reset",
+        "func": "// MQTT configuration changed: publish all rooms again on next run\nglobal.set('roommqtt', {}, 'memoryOnly');\n\nnode.status({ 'fill': 'blue', 'text': 'reset' });\n\nreturn;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 440,
+        "y": 3940,
+        "wires": [
+            []
         ]
     },
     {
@@ -20179,7 +20334,8 @@
         "mode": "link",
         "links": [
             "91dead0e9a4f77d2",
-            "444ad600059797ee"
+            "444ad600059797ee",
+            "b0ada2887e0745d8"
         ],
         "x": 1015,
         "y": 500,

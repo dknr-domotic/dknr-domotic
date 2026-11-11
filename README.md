@@ -93,6 +93,8 @@ Avec le topic `dknr` par défaut :
 * `dknr/discovery/<source>`, `dknr/discovery/<source>/<parent>`, `dknr/discovery/<source>/<parent>/<entité>` : description des sources, appareils et entités, lue pour créer les entités.
 * `dknr/get/<source>/<parent>/<entité>` : valeurs lues. Les états binaires valent `1` ou `0`, les listes utilisent la clé de l'option.
 * `dknr/set/<source>/<parent>/<entité>` : commandes envoyées par les pièces et les scènes.
+* `dknr/room/<source>/<parent>/<entité>` : pièce de chaque entité (identifiant), publiée en retenu pour les autres projets DKNR.
+* `dknr/data/room/<id>/name` et `dknr/data/room/<id>/outdoor` : nom de chaque pièce et `1` si elle est extérieure.
 
 DKNR Domotic est lui-même la source `dknr` : ses modes et capteurs internes sont publiés et pilotés par les mêmes topics (ex : `dknr/set/dknr/command/light` avec `auto`, `high`, `low` ou `manual`).
 
