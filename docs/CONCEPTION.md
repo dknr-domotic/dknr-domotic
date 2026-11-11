@@ -84,7 +84,7 @@ Conventions communes à tous les dépôts dknr :
 
 ## Source interne dknr
 
-* Commandes `dknr/command/<x>` (modes) : `nycthemer`, `light`, `shutter`, `waterboiler`, `sound`, avec `auto`, `high`, `low`, `manual`. D'autres entités dknr donnent l'état général : `automate`, mode thermique `temperature` (heating, cooling, thawing, off), humidité, lever / coucher du soleil, puissance de la maison...
+* Commandes `dknr/command/<x>` (modes) : `nycthemer`, `light`, `shutter`, `waterboiler`, `sound`, avec `auto`, `high`, `low`, `manual`. En `auto` (`common - dknr parse`) : `nycthemer` = jour entre max(lever, limite matin) et min(coucher, limite soir) ; `light` = `high` entre `workday_morning_limit` et `workday_evening_limit` (sans le soleil, passage de minuit géré), remplacé par les heures de confort de `home` si elles sont réglées ; `sound` et `shutter` suivent `nycthemer`, `waterboiler` l'inverse. D'autres entités dknr donnent l'état général : `automate`, mode thermique `temperature` (heating, cooling, thawing, off), humidité, lever / coucher du soleil, puissance de la maison...
 * Capteurs `dknr/sensor/<x>` calculés chaque minute et au changement d'une commande (`29c782ee02094a7a`) : en `auto`, calcul selon le jour / la nuit, la saison, etc. ; en `high` / `low`, valeur forcée ; en `manual`, le capteur vaut `manual` (light, sound, shutter, waterboiler), ce qui arrête les scènes de l'élément. Le mode jour / nuit garde sa dernière valeur en manuel.
 * Capteurs publiés seulement s'ils changent.
 
