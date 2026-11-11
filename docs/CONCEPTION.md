@@ -21,7 +21,7 @@ dknr-domotic est le tableau de bord et le cerveau des projets DKNR : il lit les 
 
 Onglets : `common` (logique partagée), `home`, `energy`, `calendar`, `room`, `scene`, `entity`, `config`, `auth`.
 
-* Les traitements partagés sont des groupes `common - ...` appelés par **link call** (`await node.linkcall('common - ...', msg)`) : `common - entity - merge`, `common - entity - set`, `common - entity - get`, `common - scene`, `common - influxdb`, `common - energy`, `common - weather`, `common - dknr - ...`, `common - mqtt - publish`, `common - ui - ...` (hmi, notice, enable, group, tab, control, latency), `common - user - ...`, `common - register - page`, `common - register - dictionary`.
+* Les traitements partagés sont des groupes `common - ...` appelés par **link call** (`await node.linkcall('common - ...', msg)`) : `common - entity - merge`, `common - entity - set`, `common - entity - get`, `common - scene`, `common - influxdb`, `common - energy`, `common - weather`, `common - dknr - ...`, `common - mqtt - publish`, `common - room - mqtt`, `common - ui - ...` (hmi, notice, enable, group, tab, control, latency), `common - user - ...`, `common - register - page`, `common - register - dictionary`.
 * Chaque page s'enregistre (`describe.page`) et enregistre ses textes (`dictionary`, français et anglais).
 * Tableau de bord FlowFuse Dashboard 2. Nommage des widgets : `ui - page - <page>`, `ui - group|dialog - <page> - <nom>`.
 * Classes CSS du projet préfixées `dknr-` (ex : `dknr-row-icon`, `dknr-center`).
@@ -53,6 +53,9 @@ Topic racine `dknr` par défaut :
 
 * `dknr/discovery/<source>` (titre, version, git, icône), `dknr/discovery/<source>/<parent>` (nom), `dknr/discovery/<source>/<parent>/<entité>` : `{ name, group, type: binary|number|enum|text, unit, value, options }`.
 * `dknr/get/<source>/<parent>/<entité>` : valeur. `dknr/set/<source>/<parent>/<entité>` : commande.
+* `dknr/room/<source>/<parent>/<entité>` : identifiant de la pièce de l'entité, publié par dknr-domotic seul (lecture seule pour les autres).
+* `dknr/data/<type>/<id>/<champ>` : données de référence qui ne sont pas des entités, publiées par dknr-domotic. Aujourd'hui `dknr/data/room/<id>/name` et `dknr/data/room/<id>/outdoor` (`1` / `0`).
+* Règle : les branches sous la racine (`discovery`, `get`, `set`, `room`) sont indexées par `<source>/<parent>/<entité>` ; `data` contient le reste. `room` et `data` sont retenus, un message vide efface le topic. Ne jamais y publier de configuration ni de compte : tout client du broker les lit.
 
 Conventions communes à tous les dépôts dknr :
 
@@ -72,6 +75,8 @@ Conventions communes à tous les dépôts dknr :
   * une discovery de source (`dknr/discovery/<source>`) note son démarrage dans `sourceboot`.
 * Valeurs (`common - entity - get`) : normalisation, `msg.repeat` si la valeur n'a pas changé, historisation InfluxDB (bucket `domotic`, measurement = élément, champ = identifiant), déclenchement des scènes.
 * Commandes (`common - entity - set`) : publication sur `dknr/set`. Les entités de la source `dknr` passent aussi par MQTT (get / set) comme une source externe.
+* Pièces : identifiant `[a-z0-9_]`, 32 caractères au plus (niveau de topic MQTT), unique et non modifiable, vérifié à la création (page Configuration, qui ne renomme plus une pièce existante). Nom : lettres (accents compris), chiffres, espaces et `- ' ’ _ . ( )`, 40 caractères au plus, préfixe `> ` permis (pièces `home` et `system`) ; vérifié à la création et au renommage (page de la pièce). Nom vide à la création = identifiant.
+* Pièces sur MQTT (`common - room - mqtt`, toutes les 10 s) : calcule les topics `room` et `data/room` voulus (pièces dont l'identifiant est valide ; entités non bloquées dont la pièce existe) et ne publie que les différences, en retenu, sur sa propre file (100/s) pour ne pas retarder les commandes. Mémoire `roommqtt` (memoryOnly) : `sent` (ce qui a été publié), `broker` (topics `room` / `data/room` retenus, remplis par `common - entity - get`), `full`. Un topic du broker inconnu est effacé. Tout est republié au démarrage, après l'enregistrement de la configuration MQTT et toutes les 6 h (broker redémarré sans persistance).
 * Page Entités : sélecteur de source (plusieurs milliers d'entités), puis nom, pièce, élément, groupe, unité, visibilité.
 * Éléments : switch, plug, power, current, frequency, voltage, energy, light, remote, door, window, lock, shutter, slider, waterboiler, alert, sound, motion, temperature, humidity, illuminance, pressure, fan, direction, time, battery, mode, text, location, color, tariff. Unités textuelles : `''`, `chex`, `enum`, `text`, `time`.
 
