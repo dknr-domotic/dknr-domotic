@@ -3,7 +3,7 @@
     "description": "DKNR Domotic",
     "version": "1.5",
     "dependencies": {
-        "@flowfuse/node-red-dashboard": "1.36.0",
+        "@flowfuse/node-red-dashboard": "1.36.1",
         "node-red-contrib-cron-plus": "3.2.0",
         "node-red-contrib-bcrypt": "0.1.6",
         "node-red-node-base64": "1.0.0",
