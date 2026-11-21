@@ -28,6 +28,7 @@ La documentation détaillée est sur [dknr-domotic.github.io](https://dknr-domot
 - **Home Assistant** : recopie des pièces, des noms, du masquage et des éléments dans Home Assistant, pour les entités que les sources DKNR y déclarent déjà.
 - **Historique** des valeurs dans InfluxDB.
 - **Sauvegarde et restauration** de la configuration, en choisissant les données à exporter.
+- **État de la maison** (administrateur, page Configuration) : ce qui est à vérifier, résumé du jour et état des services (MQTT, sources, Home Assistant, Telegram, MCP).
 
 
 ## Matériel requis

@@ -125,7 +125,7 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 * **Pièces** : plan, entités par usage avec pilotage et historique (InfluxDB), caméras, heures de confort, jours travaillés.
 * **Energie** : carte des flux (réseau, solaire, batterie, maison, lumières = somme des puissances visibles des parents ayant une lumière ou un spot visible), graphiques puissance / énergie / batterie aux couleurs fixes, résumé.
 * **Scènes** : édition, déclencheurs (formulaire adapté à l'unité : liste pour les enums avec options, texte sinon), minuteurs, événements, détail et débogage.
-* **Entités**, **Calendrier**, **Configuration** (MQTT, nouvel utilisateur, liste des utilisateurs, pièces, export / import sélectif, remise à zéro du quotidien), **Authentification** (utilisateurs avec niveau et langue).
+* **Entités**, **Calendrier**, **Configuration** (MQTT, nouvel utilisateur, liste des utilisateurs, pièces, export / import sélectif, remise à zéro du quotidien, état de la maison), **Authentification** (utilisateurs avec niveau et langue).
 
 
 ## Utilisateurs
@@ -158,10 +158,11 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 | room | `view` → visitor ; `command` → kid ; `scene`, `confort`, `workday` → parent ; `room`, `camera`, `location`, `map` → admin |
 | scene | `view`, `edit`, `enable`, `delete`, `trigger`, `timer` → parent |
 | entity | `view`, `edit`, `forget` → admin |
-| config | `view`, `daily`, `users` → parent ; `mqtt`, `various`, `backup`, `user`, `room` → admin |
+| config | `view`, `daily`, `users` → parent ; `mqtt`, `various`, `backup`, `user`, `room`, `status` → admin |
 | auth | `view` → tout le monde ; `mcp` → parent |
 
 * Configuration : les entrées du menu correspondent à des clés (`various` s'ouvre avec `config.various` ou `config.daily` ; un `parent` n'y voit que la remise à zéro du quotidien). La table de correspondance est dans les nœuds data du menu et de la sélection, à garder identiques.
+* État de la maison (Configuration, `config.status`, admin) : dialogue `ui - dialog - config - status`, construit seulement à son ouverture (4e sortie de la sélection du menu), trois `ui-table` aux mêmes colonnes (`icon` html, `label`, `detail`, `value`) précédés d'un titre, remplis l'un après l'autre (« Chargement… » d'abord). **À vérifier** : outil `list_problems` (alertes, piles faibles, entités muettes avec leur durée, scènes en erreur). **Résumé du jour** : comme le résumé Telegram (min / max des sondes extérieures de la page Energie dans InfluxDB, prévision du lendemain, énergie du jour de `common - energy - day`, autosuffisance). **Services** : MQTT (hôte, port, topic, jamais le mot de passe), sources (`list_sources` : appareils, entités, muettes, démarrage annoncé), miroir Home Assistant (dernier passage), Telegram (comptes liés, heure du résumé), nombre de clés MCP. Textes : dictionnaire `config` (`status_*`) et libellés de `telegram`.
 * Lien d'export : jeton aléatoire de 64 caractères (`crypto`), à usage unique, valable 5 minutes.
 
 
@@ -265,7 +266,7 @@ Miroir de l'installation dans Home Assistant, onglet `homeassistant` (nœud `mir
 
 * `DKNR_HA_URL` (`http://<ip>:8123`, `ws://` accepté) et `DKNR_HA_TOKEN` (jeton longue durée) ; l'un des deux vide = désactivé.
 * WebSocket natif de Node.js, donné aux fonctions par `functionGlobalContext` (`data/settings.js`) : aucune dépendance npm.
-* Inject 60 s après le démarrage puis toutes les 5 minutes ; un seul passage à la fois (`running` dans le contexte du nœud). Résultat dans le statut du nœud, dans les logs quand quelque chose change, et dans le contexte flow `homeassistant` (`matched`, `duplicates`, `updated`, `areas_created`, `labels_created`, `errors`, `error`).
+* Inject 60 s après le démarrage puis toutes les 5 minutes ; un seul passage à la fois (`running` dans le contexte du nœud). Résultat dans le statut du nœud, dans les logs quand quelque chose change, et dans le contexte global `homeassistant` (mémoire, lu par l'état de la maison de Configuration ; `matched`, `duplicates`, `updated`, `areas_created`, `labels_created`, `errors`, `error`).
 * Les noms : les entités MQTT de Home Assistant ont `has_entity_name`, le nom affiché peut donc être précédé du nom de l'appareil de la source selon la carte.
 
 
