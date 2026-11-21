@@ -85,7 +85,7 @@ Une scène pilote une entité cible (lumière, volet, serrure, chauffe-eau, ther
 * **Humidité**, **veilleuse**, **tarif** favorable, **puissance** consommée (arrêt quand l'appareil ne consomme plus).
 * **Quotidien** : une seule fois par jour.
 * **Durée** : arrêt automatique après un délai, aussi après un allumage manuel.
-* **Thermostat** : consigne confort, éco ou hors gel, sondes intérieures (déclencheurs de la scène) et température extérieure (une ou deux sondes choisies dans la page **Energie**, menu Entités), durée de chauffe calculée, arrêt fenêtre ouverte, refroidissement sur énergie solaire.
+* **Thermostat** : consigne confort, éco ou hors gel, sondes intérieures (déclencheurs de la scène) et température extérieure (une ou deux sondes choisies dans la page **Energie**, menu Entités, qui déclenchent toutes les scènes thermostat : inutile de les ajouter aux déclencheurs), durée de chauffe calculée, arrêt fenêtre ouverte, refroidissement sur énergie solaire.
 
 Les modes de la source `dknr` (ex : `dknr/sensor/nycthemer` pour le jour / la nuit) peuvent servir de déclencheurs.
 
