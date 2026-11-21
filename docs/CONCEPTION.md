@@ -19,7 +19,7 @@ dknr-domotic est le tableau de bord et le cerveau des projets DKNR : il lit les 
 
 ## Organisation du flow
 
-Onglets : `common` (logique partagée), `home`, `energy`, `calendar`, `room`, `scene`, `entity`, `config`, `auth`.
+Onglets : `common` (logique partagée), `home`, `energy`, `calendar`, `room`, `scene`, `entity`, `config`, `auth`, `mcp` (serveur MCP, voir plus bas).
 
 * Les traitements partagés sont des groupes `common - ...` appelés par **link call** (`await node.linkcall('common - ...', msg)`) : `common - entity - merge`, `common - entity - set`, `common - entity - get`, `common - scene`, `common - influxdb`, `common - energy`, `common - weather`, `common - dknr - ...`, `common - mqtt - publish`, `common - room - mqtt`, `common - ui - ...` (hmi, notice, enable, group, tab, control, latency), `common - user - ...`, `common - register - page`, `common - register - dictionary`.
 * Chaque page s'enregistre (`describe.page`) et enregistre ses textes (`dictionary`, français et anglais).
@@ -158,10 +158,54 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 | scene | `view`, `edit`, `enable`, `delete`, `trigger`, `timer` → parent |
 | entity | `view`, `edit`, `forget` → admin |
 | config | `view`, `daily`, `users` → parent ; `mqtt`, `various`, `backup`, `user`, `room` → admin |
-| auth | `view` → tout le monde |
+| auth | `view` → tout le monde ; `mcp` → parent |
 
 * Configuration : les entrées du menu correspondent à des clés (`various` s'ouvre avec `config.various` ou `config.daily` ; un `parent` n'y voit que la remise à zéro du quotidien). La table de correspondance est dans les nœuds data du menu et de la sélection, à garder identiques.
 * Lien d'export : jeton aléatoire de 64 caractères (`crypto`), à usage unique, valable 5 minutes.
+
+
+## Serveur MCP
+
+dknr-domotic expose un serveur [MCP](https://modelcontextprotocol.io) pour qu'un assistant (Claude...) lise l'installation : pièces, entités, historique, scènes et leur débogage. Son but est le **diagnostic** et l'aide au développement (voir la vraie installation sans publier ses noms sur GitHub), pas le pilotage de la maison, qui reste au tableau de bord, aux scènes, à dknr-alexa et à dknr-voice.
+
+### Accès réseau
+
+* Point d'entrée `POST /mcp` sur le port de Node-RED (`http://<ip>:1880/mcp`), onglet `mcp` du flow. `GET /mcp` répond 405 (pas de flux SSE).
+* Le serveur reste **sur le réseau local** : rien n'est ouvert vers l'extérieur. Un connecteur ajouté dans les réglages de claude.ai est appelé depuis internet et n'est donc pas la cible. On le déclare en local, dans l'app Claude desktop d'un PC du réseau (passerelle `mcp-remote` vers l'URL HTTP), ou dans Claude Code sur le réseau local (`claude mcp add --transport http dknr http://<ip>:1880/mcp --header "x-api-key: <clé>"`).
+* Si la domotique est un jour ouverte vers l'extérieur, `/mcp` doit passer derrière le proxy réseau prévu (HTTPS), comme le tableau de bord.
+
+### Clé et droits
+
+* Une clé par utilisateur, créée et retirée par l'utilisateur lui-même dans la page **Authentification** une fois connecté (action `auth.mcp`, niveau minimal `parent`). La clé (`dknr_` + 43 caractères aléatoires, `crypto`) n'est affichée qu'une fois ; seule son empreinte SHA-256 est gardée dans `auth[<login>].mcp` (`{ hash, time }`), donc dans `/data/backup/user.json` (relu au démarrage, `common - user - read` conserve `mcp`, y compris pour `admin`).
+* Envoyée dans l'en-tête `x-api-key` (ou `Authorization: Bearer <clé>`). Sans clé valide : 401.
+* **Aucun passe-droit** : la clé donne le login, et le niveau est relu à chaque requête dans `auth` (un compte supprimé ou dont la clé est retirée perd l'accès aussitôt). Chaque outil vérifie ses clés d'accès par `common - user - access`, avec les mêmes clés que les pages (`msg.hmi` construit avec le login et le niveau de la clé).
+* Jamais exposés : comptes, sessions, configuration MQTT (mot de passe), jetons.
+
+### Protocole
+
+* JSON-RPC 2.0 sur HTTP (transport « Streamable HTTP » de MCP, réponses JSON simples, sans session ni SSE). Méthodes : `initialize` (renvoie la version du protocole demandée si elle est connue), `ping`, `tools/list`, `tools/call` ; une notification (sans `id`) reçoit 202. Lot (tableau) accepté.
+* Résultat d'un outil : `content` texte contenant du JSON ; erreur d'outil : `isError: true` avec le message (refus d'accès compris).
+* Historique : link call `mcp - influxdb` (nœud `influxdb in`), limité à 7 jours et 300 points environ (fenêtre d'agrégation calculée).
+* Débogage d'une scène : link call `common - scene - summary` (le résumé des échecs est dans le contexte flow de l'onglet `common`), qui rend aussi l'heure du dernier ordre réussi (`msg.routine`).
+
+### Outils (lecture seule)
+
+| Outil | Contenu | Clé d'accès |
+|---|---|---|
+| `get_house` | version, nombres de pièces / entités / scènes, modes et capteurs de la source `dknr` | `room.view` |
+| `list_rooms` | pièces (id, nom, extérieure, nombre d'entités visibles) | `room.view` |
+| `list_sources` | sources (discovery, démarrage annoncé), nombre d'appareils et d'entités | `room.view` |
+| `list_entities` | filtres pièce, source, élément, texte ; entités cachées ou bloquées avec `include_hidden` | `room.view` (+ `entity.view` pour les cachées) |
+| `get_entity` | entité, discovery, options, scènes qui la pilotent ou qu'elle déclenche | `room.view` (+ `entity.view` si cachée) |
+| `get_history` | valeurs InfluxDB des dernières heures (1 à 168) | `room.view` |
+| `list_problems` | entités muettes (règle de la page des pièces : 48 h, 1 h pour une puissance non nulle hors commande), alertes actives, scènes avec un échec récent | `room.view` (scènes : `scene.view`) |
+| `list_scenes` | scènes (cible, activée, routines actives, déclencheurs, échec gardé) | `scene.view` |
+| `get_scene` | scène complète, déclencheurs avec nom et valeur, dernier échec, dernier ordre réussi | `scene.view` |
+
+### Suite prévue
+
+* Commandes (`set_entity`, modes `dknr/command/<x>`) : désactivées par défaut, autorisées par une case dans Configuration (comme le désarmement de dknr-verisure), avec la clé `room.command` de l'utilisateur. Les serrures (`lock`) et l'alarme restent toujours exclues.
+* Création de scènes depuis l'assistant, une fois les scènes de l'installation en place.
 
 
 ## Pistes et points ouverts
