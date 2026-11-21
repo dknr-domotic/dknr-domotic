@@ -253,6 +253,7 @@ Miroir de l'installation dans Home Assistant, onglet `homeassistant` (nœud `mir
 
 ### Principe
 
+* Source interne `dknr` : si le topic Home Assistant de la configuration MQTT est rempli, `common - dknr` (nœud `publish`, au démarrage et à l'enregistrement de la configuration MQTT) publie sa discovery Home Assistant comme une source dknr-xxx : appareil `DKNR Domotic`, `unique_id` `dknr_dknr_<parent>_<entité>`, topic `<ha>/<type>/dknr/<parent>_<entité>/config`. Commandes enum = `select` (libellés anglais des enums de `common - dknr - data`, traduits clé ↔ libellé par templates), heures = `text` (`hh:mm`), capteurs = `sensor` (catégorie diagnostic, sauf la puissance de la maison, `power` en W). Latitude et longitude jamais publiées. Champ vide = rien (les configs déjà retenues restent sur le broker).
 * Chaque source dknr-xxx publie sa propre discovery Home Assistant (`homeassistant/<type>/<source>/<parent>_<entité>/config`, `unique_id` = `dknr_<source>_<parent>_<entité>`), pour rester utilisable avec Home Assistant sans dknr-domotic. dknr-domotic **ne publie rien** sur `homeassistant/` : deux éditeurs retenus sur les mêmes topics donneraient des doublons ou des bascules.
 * dknr-domotic passe par l'**API WebSocket** de Home Assistant (`/api/websocket`) et retrouve chaque entité par son `unique_id` (uid DKNR, `/` remplacé par `_`, plateforme `mqtt`). Les entités sans discovery Home Assistant dans leur source (source `dknr`, types non déclarés) sont ignorées.
 * Recopié : zone = pièce (zone cherchée par nom, sans casse, créée si absente ; préfixe `> ` retiré), nom (nom DKNR, vide = nom d'origine), masquage (`hidden_by: user` si l'entité est cachée ou bloquée ; démasquée seulement si le masquage vient de `user`, jamais de `disabled_by`), étiquette de l'élément (libellé `option_element` dans la langue du compte `admin`, créée si absente). Les étiquettes dont le nom est celui d'un élément sont gérées par dknr-domotic, les autres étiquettes de l'entité sont conservées.
@@ -270,6 +271,5 @@ Miroir de l'installation dans Home Assistant, onglet `homeassistant` (nœud `mir
 ## Pistes et points ouverts
 
 * Délestage des thermostats quand la puissance dépasse l'abonnement (`temperature_duration_offloading` déjà prévu, non utilisé).
-* Champ présent mais pas utilisé par dknr-domotic : topic Home Assistant de la configuration MQTT (la discovery Home Assistant reste aux sources, voir Home Assistant).
 * Ordre en attente des volets sans expiration (à revoir si un cas gênant apparaît).
 * Projet lié en conception : dknr-alexa (voir son `docs/CONCEPTION.md`).

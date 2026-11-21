@@ -147,6 +147,8 @@ Mise en place :
 1. Dans Home Assistant, page de votre profil, onglet **Sécurité**, créez un **jeton d'accès longue durée**.
 2. Mettez l'adresse de Home Assistant dans **DKNR_HA_URL** et le jeton dans **DKNR_HA_TOKEN**, puis redémarrez le conteneur.
 
+Les modes et capteurs de la maison (source interne `dknr` : jour / nuit, lumières, volets, chauffe-eau, limites horaires, puissance de la maison...) sont aussi déclarés à Home Assistant par DKNR Domotic, sur l'appareil **DKNR Domotic**, si le champ **Topic découverte Home assistant** de la configuration MQTT est rempli (`homeassistant` en général). Les modes et les limites horaires s'y pilotent.
+
 La recopie a lieu une minute après le démarrage puis toutes les 5 minutes, et n'envoie que les différences. Elle ne touche qu'aux entités dont l'identifiant unique commence par `dknr_` (celles des sources DKNR) : DKNR Domotic garde la main sur leur zone, leur nom, leur masquage et leurs étiquettes d'élément. Les scènes restent dans DKNR Domotic.
 
 Quand une source a changé le type d'une entité, Home Assistant garde l'ancienne entité (indisponible) à côté de la nouvelle : DKNR Domotic ne recopie que celle qui fonctionne et masque les autres. Vous pouvez supprimer ces anciennes entités dans Home Assistant.
