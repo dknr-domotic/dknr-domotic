@@ -312,12 +312,20 @@
             "838cadd8f49f5c48",
             "c2d83545816da9b6",
             "65095fe14acbc879",
-            "7273fb95841eff76"
+            "7273fb95841eff76",
+            "db23a3630ba60ab4",
+            "a1a8034121da7fe7",
+            "56780baff00cdd4f",
+            "a21a324a53941dd6",
+            "294aa82f573502e6",
+            "27fec75ec1415c9a",
+            "47588d39451e3bf0",
+            "3fd87c00d1c17853"
         ],
         "x": 104,
         "y": 339,
         "w": 952,
-        "h": 1102
+        "h": 1561
     },
     {
         "id": "56577cc20111c3b4",
@@ -2438,6 +2446,21 @@
         "width": "6",
         "height": 1,
         "order": 7,
+        "showTitle": false,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "dialog",
+        "tab": ""
+    },
+    {
+        "id": "9be6b9f2f3604880",
+        "type": "ui-group",
+        "name": "ui - dialog - config - status",
+        "page": "6ad5b379d58d7aa1",
+        "width": "6",
+        "height": 1,
+        "order": 8,
         "showTitle": false,
         "className": "",
         "visible": "true",
@@ -20251,7 +20274,7 @@
         "z": "d90937c9d5b88b24",
         "g": "74e3eb9607fef02f",
         "name": "page",
-        "func": "// Register page\n\nmsg.payload = {\n    'order': 6,\n    'flow': env.get('NR_FLOW_NAME'),\n    'name': 'ui - page - config',\n    'id': '6ad5b379d58d7aa1',\n    'icon': 'cog',\n    // Minimal user level by action: '' (not connected), visitor, kid, parent, admin\n    'access': {\n        'view':    'parent', // see the page\n        'mqtt':    'admin', // MQTT server\n        'various': 'admin', // auto login, session duration\n        'daily':   'parent', // reset daily routines\n        'backup':  'admin', // export / import\n        'user':    'admin', // create a user\n        'users':   'parent', // users list (fine rules in the list nodes)\n        'room':    'admin' // house rooms\n    }\n};\n\nmsg = await node.linkcall('common - register - page', msg);\n\nreturn;",
+        "func": "// Register page\n\nmsg.payload = {\n    'order': 6,\n    'flow': env.get('NR_FLOW_NAME'),\n    'name': 'ui - page - config',\n    'id': '6ad5b379d58d7aa1',\n    'icon': 'cog',\n    // Minimal user level by action: '' (not connected), visitor, kid, parent, admin\n    'access': {\n        'view':    'parent', // see the page\n        'mqtt':    'admin', // MQTT server\n        'various': 'admin', // auto login, session duration\n        'daily':   'parent', // reset daily routines\n        'backup':  'admin', // export / import\n        'user':    'admin', // create a user\n        'users':   'parent', // users list (fine rules in the list nodes)\n        'room':    'admin', // house rooms\n        'status':  'admin' // house status (things to check, summary, services)\n    }\n};\n\nmsg = await node.linkcall('common - register - page', msg);\n\nreturn;",
         "outputs": 0,
         "timeout": 0,
         "noerr": 0,
@@ -20268,7 +20291,7 @@
         "z": "d90937c9d5b88b24",
         "g": "74e3eb9607fef02f",
         "name": "dictionary",
-        "func": "// Register page\n\nmsg.payload = {\n    'flow': env.get('NR_FLOW_NAME'),\n    'en': {\n        'page_title': 'Settings',\n        'users': 'Users',\n        'users_disconnect': 'Disconnect',\n        'users_delete': 'Delete',\n        'users_connected': 'Opened session',\n        'users_disconnected': 'User disconnected',\n        'users_deleted': 'User deleted',\n        'users_denied': 'Action not allowed',\n        'various_session': 'Session duration',\n        'various_session_6': '6 hours',\n        'various_session_24': '24 hours',\n        'various_session_720': '30 days'\n    },\n    'fr': {\n        'page_title': 'Configuration',\n        'backup_select': 'Données à exporter',\n        'backup_empty': 'Aucune donnée sélectionnée',\n        'backup_auth': 'Utilisateurs',\n        'backup_mqtt': 'MQTT',\n        'backup_room': 'Pièces',\n        'backup_parent': 'Appareils',\n        'backup_entity': 'Entités',\n        'backup_block': 'Entités bloquées',\n        'backup_calendar': 'Calendrier',\n        'backup_energy': 'Energie',\n        'backup_scene': 'Scènes',\n        'backup': 'Import/Export',\n        'room': 'Pièce',\n        'user': 'Utilisateur',\n        'various': 'Divers',\n\n        'mqtt': 'MQTT',\n        'mqtt_host': 'Adresse',\n        'mqtt_port': 'Port',\n        'mqtt_topic': 'DKNR Topic',\n        'mqtt_username': 'Identifiant',\n        'mqtt_password': 'Mot de passe',\n        'mqtt_homeassistant': 'Topic découverte Home assistant',\n        'mqtt_enabled': 'Activé',\n\n        'user_login': 'Identifiant',\n        'user_pass': 'Mot de passe',\n        'user_level': 'Niveau',\n        'user_lang': 'Langue',\n        'user_telegram': 'Telegram',\n\n        'backup_download': 'Télécharger la sauvegarde',\n        'backup_upload': 'Importer une sauvegarde',\n        'room_id': 'Identifiant',\n        'room_name': 'Nom',\n        'room_outdoor': 'Extérieur',\n        'user_lang_en': 'English',\n        'user_lang_fr': 'Français',\n        'users': 'Utilisateurs',\n        'users_disconnect': 'Déconnecter',\n        'users_delete': 'Supprimer',\n        'users_connected': 'Session ouverte',\n        'users_disconnected': 'Utilisateur déconnecté',\n        'users_deleted': 'Utilisateur supprimé',\n        'users_denied': 'Action non autorisée',\n        'various_session': 'Durée des sessions',\n        'various_session_6': '6 heures',\n        'various_session_24': '24 heures',\n        'various_session_720': '30 jours',\n        'various_loginauto': 'Connexion automatique en administrateur',\n        'various_loginmanual': 'Exiger une connexion',\n        'various_resetdaily': 'Réinitialiser les routines quotidiennes'\n    }\n};\n\nmsg = await node.linkcall('common - register - dictionary', msg);\n\nreturn;",
+        "func": "// Register page\n\nmsg.payload = {\n    'flow': env.get('NR_FLOW_NAME'),\n    'en': {\n        'page_title': 'Settings',\n        'users': 'Users',\n        'users_disconnect': 'Disconnect',\n        'users_delete': 'Delete',\n        'users_connected': 'Opened session',\n        'users_disconnected': 'User disconnected',\n        'users_deleted': 'User deleted',\n        'users_denied': 'Action not allowed',\n        'various_session': 'Session duration',\n        'various_session_6': '6 hours',\n        'various_session_24': '24 hours',\n        'various_session_720': '30 days',\n        'status': 'House status',\n        'status_problems': 'Things to check',\n        'status_summary': 'Summary of the day',\n        'status_services': 'Services',\n        'status_loading': 'Loading...',\n        'status_error': 'Error',\n        'status_empty': 'No data',\n        'status_tomorrow': 'Tomorrow',\n        'status_ratio': 'Self-sufficiency',\n        'status_disabled': 'Disabled',\n        'status_waiting': 'Waiting for the first run',\n        'status_sources': 'Sources',\n        'status_source': '{parents} devices, {entities} entities',\n        'status_source_silent': '{n} silent',\n        'status_started': 'Started',\n        'status_ha': '{matched} entities, {duplicates} duplicates, {updated} updated',\n        'status_linked': '{n} linked accounts',\n        'status_keys': '{n} keys'\n    },\n    'fr': {\n        'page_title': 'Configuration',\n        'backup_select': 'Données à exporter',\n        'backup_empty': 'Aucune donnée sélectionnée',\n        'backup_auth': 'Utilisateurs',\n        'backup_mqtt': 'MQTT',\n        'backup_room': 'Pièces',\n        'backup_parent': 'Appareils',\n        'backup_entity': 'Entités',\n        'backup_block': 'Entités bloquées',\n        'backup_calendar': 'Calendrier',\n        'backup_energy': 'Energie',\n        'backup_scene': 'Scènes',\n        'backup': 'Import/Export',\n        'room': 'Pièce',\n        'user': 'Utilisateur',\n        'various': 'Divers',\n\n        'mqtt': 'MQTT',\n        'mqtt_host': 'Adresse',\n        'mqtt_port': 'Port',\n        'mqtt_topic': 'DKNR Topic',\n        'mqtt_username': 'Identifiant',\n        'mqtt_password': 'Mot de passe',\n        'mqtt_homeassistant': 'Topic découverte Home assistant',\n        'mqtt_enabled': 'Activé',\n\n        'user_login': 'Identifiant',\n        'user_pass': 'Mot de passe',\n        'user_level': 'Niveau',\n        'user_lang': 'Langue',\n        'user_telegram': 'Telegram',\n\n        'backup_download': 'Télécharger la sauvegarde',\n        'backup_upload': 'Importer une sauvegarde',\n        'room_id': 'Identifiant',\n        'room_name': 'Nom',\n        'room_outdoor': 'Extérieur',\n        'user_lang_en': 'English',\n        'user_lang_fr': 'Français',\n        'users': 'Utilisateurs',\n        'users_disconnect': 'Déconnecter',\n        'users_delete': 'Supprimer',\n        'users_connected': 'Session ouverte',\n        'users_disconnected': 'Utilisateur déconnecté',\n        'users_deleted': 'Utilisateur supprimé',\n        'users_denied': 'Action non autorisée',\n        'various_session': 'Durée des sessions',\n        'various_session_6': '6 heures',\n        'various_session_24': '24 heures',\n        'various_session_720': '30 jours',\n        'status': 'État de la maison',\n        'status_problems': 'À vérifier',\n        'status_summary': 'Résumé du jour',\n        'status_services': 'Services',\n        'status_loading': 'Chargement…',\n        'status_error': 'Erreur',\n        'status_empty': 'Aucune donnée',\n        'status_tomorrow': 'Demain',\n        'status_ratio': 'Autosuffisance',\n        'status_disabled': 'Désactivé',\n        'status_waiting': 'En attente du premier passage',\n        'status_sources': 'Sources',\n        'status_source': '{parents} appareils, {entities} entités',\n        'status_source_silent': '{n} muettes',\n        'status_started': 'Démarré',\n        'status_ha': '{matched} entités, {duplicates} doublons, {updated} mises à jour',\n        'status_linked': '{n} comptes liés',\n        'status_keys': '{n} clés',\n        'various_loginauto': 'Connexion automatique en administrateur',\n        'various_loginmanual': 'Exiger une connexion',\n        'various_resetdaily': 'Réinitialiser les routines quotidiennes'\n    }\n};\n\nmsg = await node.linkcall('common - register - dictionary', msg);\n\nreturn;",
         "outputs": 0,
         "timeout": 0,
         "noerr": 0,
@@ -20629,7 +20652,7 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Check display\nmsg = await node.linkcall('common - ui - enable', msg);\n\nif (!msg.enabled) {\n\n    return msg;\n}\n\n// Menu entries allowed by user level, any of their access keys (keep in sync with menu select)\nconst access = {\n    'mqtt': ['config.mqtt'],\n    'backup': ['config.backup'],\n    'various': ['config.various', 'config.daily'],\n    'user': ['config.user'],\n    'users': ['config.users'],\n    'room': ['config.room']\n};\n\nconst menu = {\n    'mqtt': ['database', msg.dictionary.config.mqtt || 'MQTT'],\n    'backup': ['backup-restore', msg.dictionary.config.backup || 'Import/Export'],\n    'various': ['tune', msg.dictionary.config.various || 'Various'],\n    'user': ['account-plus', msg.dictionary.config.user || 'New user'],\n    'users': ['account-edit', msg.dictionary.config.users || 'Users'],\n    'room': ['home-plus', msg.dictionary.config.room || 'New room']\n};\n\nlet options = [];\nfor (const key in menu) {\n    msg.access = access[key] || [];\n    msg.access_any = true;\n    msg = await node.linkcall('common - user - access', msg);\n    if (!msg.allowed) {\n\n        continue;\n    }\n\n    options.push({\n        'value': key,\n        'label': menu[key][1],\n        'icon': menu[key][0]\n    });\n}\n\nmsg.ui_update = {\n    'label': '',\n    'options': options,\n    'class': ''\n};\nmsg.payload = '';\n\nreturn msg;",
+        "func": "\n// Check display\nmsg = await node.linkcall('common - ui - enable', msg);\n\nif (!msg.enabled) {\n\n    return msg;\n}\n\n// Menu entries allowed by user level, any of their access keys (keep in sync with menu select)\nconst access = {\n    'mqtt': ['config.mqtt'],\n    'backup': ['config.backup'],\n    'various': ['config.various', 'config.daily'],\n    'user': ['config.user'],\n    'users': ['config.users'],\n    'room': ['config.room'],\n    'status': ['config.status']\n};\n\nconst menu = {\n    'mqtt': ['database', msg.dictionary.config.mqtt || 'MQTT'],\n    'backup': ['backup-restore', msg.dictionary.config.backup || 'Import/Export'],\n    'various': ['tune', msg.dictionary.config.various || 'Various'],\n    'user': ['account-plus', msg.dictionary.config.user || 'New user'],\n    'users': ['account-edit', msg.dictionary.config.users || 'Users'],\n    'room': ['home-plus', msg.dictionary.config.room || 'New room'],\n    'status': ['clipboard-pulse-outline', msg.dictionary.config.status || 'House status']\n};\n\nlet options = [];\nfor (const key in menu) {\n    msg.access = access[key] || [];\n    msg.access_any = true;\n    msg = await node.linkcall('common - user - access', msg);\n    if (!msg.allowed) {\n\n        continue;\n    }\n\n    options.push({\n        'value': key,\n        'label': menu[key][1],\n        'icon': menu[key][0]\n    });\n}\n\nmsg.ui_update = {\n    'label': '',\n    'options': options,\n    'class': ''\n};\nmsg.payload = '';\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -20650,8 +20673,8 @@
         "z": "d90937c9d5b88b24",
         "g": "8455e62e4f171015",
         "name": "data",
-        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\n// Menu entries allowed by user level, any of their access keys (keep in sync with menu data)\nconst access = {\n    'mqtt': ['config.mqtt'],\n    'backup': ['config.backup'],\n    'various': ['config.various', 'config.daily'],\n    'user': ['config.user'],\n    'users': ['config.users'],\n    'room': ['config.room']\n};\n\nlet allowed = false;\nif (msg.payload !== '' && Array.isArray(access[msg.payload])) {\n    msg.access = access[msg.payload];\n    msg.access_any = true;\n    msg.access_notice = true;\n    msg = await node.linkcall('common - user - access', msg);\n    allowed = msg.allowed;\n}\n\nif (allowed) {\n    msg.show = ['ui - dialog - config - ' + msg.payload];\n    msg = await node.linkcall('common - ui - group', msg);\n    msg = await node.linkcall('common - ui - latency', msg);\n\n    // Fix flowfuse dashboard msg.topic fail\n    global.set('form[\"' + msg.hmi.id + '\"][\"dialog\"]', msg.payload);\n\n    msg.enabled = true;\n    if (msg.payload === 'users') {\n        // Users list (admin and parent)\n        node.send([null, null, msg]);\n    } else {\n        // Admin dialogs\n        node.send([msg, null, null]);\n    }\n}\n\nmsg.enabled = true;\nmsg.payload = '';\n\nreturn [null, msg, null];",
-        "outputs": 3,
+        "func": "\n// Get ui data\nmsg = await node.linkcall('common - ui - hmi', msg);\n\n// Menu entries allowed by user level, any of their access keys (keep in sync with menu data)\nconst access = {\n    'mqtt': ['config.mqtt'],\n    'backup': ['config.backup'],\n    'various': ['config.various', 'config.daily'],\n    'user': ['config.user'],\n    'users': ['config.users'],\n    'room': ['config.room'],\n    'status': ['config.status']\n};\n\nlet allowed = false;\nif (msg.payload !== '' && Array.isArray(access[msg.payload])) {\n    msg.access = access[msg.payload];\n    msg.access_any = true;\n    msg.access_notice = true;\n    msg = await node.linkcall('common - user - access', msg);\n    allowed = msg.allowed;\n}\n\nif (allowed) {\n    msg.show = ['ui - dialog - config - ' + msg.payload];\n    msg = await node.linkcall('common - ui - group', msg);\n    msg = await node.linkcall('common - ui - latency', msg);\n\n    // Fix flowfuse dashboard msg.topic fail\n    global.set('form[\"' + msg.hmi.id + '\"][\"dialog\"]', msg.payload);\n\n    msg.enabled = true;\n    if (msg.payload === 'users') {\n        // Users list (admin and parent)\n        node.send([null, null, msg, null]);\n    } else if (msg.payload === 'status') {\n        // House status (admin), built only when opened\n        node.send([null, null, null, msg]);\n    } else {\n        // Admin dialogs\n        node.send([msg, null, null, null]);\n    }\n}\n\nmsg.enabled = true;\nmsg.payload = '';\n\nreturn [null, msg, null, null];",
+        "outputs": 4,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
@@ -20672,6 +20695,9 @@
             ],
             [
                 "ae383c95503c0c9c"
+            ],
+            [
+                "db23a3630ba60ab4"
             ]
         ]
     },
@@ -23202,7 +23228,7 @@
         "z": "b97c5713ce59e8b8",
         "g": "04d7df329b77e005",
         "name": "mirror",
-        "func": "// Mirror dknr-domotic into Home Assistant, through the Home Assistant WebSocket API\n// Nothing is published on MQTT: entities stay those of each dknr-xxx source discovery,\n// matched by their unique_id dknr_<source>_<parent>_<entity> (uid with _ instead of /).\n// Mirrored: area (room), name, hidden (hidden or blocked entity), one label by element.\n// Only entities whose unique_id starts with dknr_ are touched, nothing is ever deleted.\n\nconst url = (env.get('DKNR_HA_URL') || '').trim().replace(/\\/+$/, '');\nconst token = (env.get('DKNR_HA_TOKEN') || '').trim();\nif (url === '' || token === '') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'disabled' });\n\n    return null;\n}\n\n// One run at a time\nif (context.get('running') === true) {\n\n    return null;\n}\n\n// Native WebSocket of Node.js, given by settings.js functionGlobalContext\nconst WS = global.get('WebSocket');\nif (typeof WS !== 'function') {\n    node.status({ fill: 'red', shape: 'dot', text: 'no WebSocket' });\n    node.error('Home Assistant: WebSocket is not available (see functionGlobalContext in settings.js)');\n\n    return null;\n}\n\n// Wait for dknr entities after boot\nconst entities = global.get('entity') || {};\nif (Object.keys(entities).length === 0) {\n\n    return null;\n}\n\nconst wsurl = (url.startsWith('ws') ? url : url.replace(/^http/, 'ws')).replace(/\\/api\\/websocket$/, '') + '/api/websocket';\nconst rooms = (global.get('room') || {}).base || {};\nconst blocks = global.get('block') || {};\nconst lang = ((global.get('auth') || {}).admin || {}).lang || 'fr';\nconst words = { ...(global.get('dictionary.en.option_element') || {}), ...(global.get('dictionary[\"' + lang + '\"].option_element') || {}) };\n\ncontext.set('running', true);\nnode.status({ fill: 'blue', shape: 'dot', text: 'running' });\n\nlet ws = null;\nconst pending = {};\nlet sequence = 0;\n\n// Send a command and wait for its result\nconst call = (type, data) => new Promise((resolve, reject) => {\n    const id = ++sequence;\n    const timer = setTimeout(() => {\n        delete pending[id];\n        reject(new Error(type + ': timeout'));\n    }, 30000);\n    pending[id] = { resolve, reject, timer, type };\n    ws.send(JSON.stringify({ id, type, ...(data || {}) }));\n});\n\n// Open and authenticate\nconst connect = () => new Promise((resolve, reject) => {\n    const timer = setTimeout(() => reject(new Error('connection timeout')), 15000);\n    ws = new WS(wsurl);\n    ws.addEventListener('error', () => {\n        clearTimeout(timer);\n        reject(new Error('connection error to ' + wsurl));\n    });\n    ws.addEventListener('close', () => {\n        for (const id in pending) {\n            clearTimeout(pending[id].timer);\n            pending[id].reject(new Error('connection closed'));\n            delete pending[id];\n        }\n    });\n    ws.addEventListener('message', (event) => {\n        let m = {};\n        try { m = JSON.parse(event.data); } catch (e) { return; }\n        if (m.type === 'auth_required') {\n            ws.send(JSON.stringify({ type: 'auth', access_token: token }));\n        } else if (m.type === 'auth_ok') {\n            clearTimeout(timer);\n            resolve();\n        } else if (m.type === 'auth_invalid') {\n            clearTimeout(timer);\n            reject(new Error('invalid token'));\n        } else if (m.type === 'result' && pending[m.id]) {\n            const p = pending[m.id];\n            delete pending[m.id];\n            clearTimeout(p.timer);\n            if (m.success) {\n                p.resolve(m.result);\n            } else {\n                p.reject(new Error(p.type + ': ' + ((m.error || {}).message || 'failed')));\n            }\n        }\n    });\n});\n\nconst report = {\n    'time': Date.now(),\n    'matched': 0,\n    'updated': 0,\n    'areas_created': 0,\n    'labels_created': 0,\n    'errors': 0\n};\n\ntry {\n    await connect();\n\n    const areas = await call('config/area_registry/list');\n    const states = await call('get_states');\n    const labels = await call('config/label_registry/list');\n    const list = await call('config/entity_registry/list');\n\n    // dknr entities by Home Assistant unique_id\n    const byUnique = {};\n    for (const uid in entities) {\n        byUnique['dknr_' + uid.split('/').join('_')] = uid;\n    }\n\n    // Home Assistant entities from dknr sources, by dknr uid\n    // A unique_id is unique by entity type only: when a source changed the type of an entity,\n    // the old one stays in Home Assistant (unavailable) beside the new one.\n    const alive = {};\n    for (const st of states) {\n        alive[st.entity_id] = st.state !== 'unavailable';\n    }\n    const byUid = {};\n    for (const r of list) {\n        if (r.platform !== 'mqtt' || typeof r.unique_id !== 'string' || !byUnique[r.unique_id]) {\n            continue;\n        }\n        (byUid[byUnique[r.unique_id]] = byUid[byUnique[r.unique_id]] || []).push(r);\n    }\n    const matches = [];\n    const duplicates = [];\n    for (const uid in byUid) {\n        // Keep the entity with a real state, the most recently modified first\n        const rs = byUid[uid].sort((a, b) => (alive[b.entity_id] === true) - (alive[a.entity_id] === true) || (b.modified_at || 0) - (a.modified_at || 0));\n        matches.push([rs[0], entities[uid], uid]);\n        for (const r of rs.slice(1)) {\n            duplicates.push(r);\n        }\n    }\n    report.matched = matches.length;\n    report.duplicates = duplicates.length;\n\n    // Areas by name (dknr room \"> Home\" gives the area \"Home\")\n    const areaName = id => (String((rooms[id] || {}).name || id)).replace(/^>\\s*/, '').trim() || id;\n    const areaByName = {};\n    for (const a of areas) {\n        areaByName[String(a.name).toLowerCase()] = a.area_id;\n    }\n    const roomArea = {};\n    for (const id in rooms) {\n        const name = areaName(id);\n        if (!areaByName[name.toLowerCase()]) {\n            const a = await call('config/area_registry/create', { name });\n            areaByName[name.toLowerCase()] = a.area_id;\n            report.areas_created++;\n        }\n        roomArea[id] = areaByName[name.toLowerCase()];\n    }\n\n    // Labels by element: every label named like an element is managed by dknr\n    const labelByName = {};\n    for (const l of labels) {\n        labelByName[String(l.name).toLowerCase()] = l.label_id;\n    }\n    const managed = new Set();\n    for (const el in words) {\n        const id = labelByName[String(words[el]).toLowerCase()];\n        if (id) {\n            managed.add(id);\n        }\n    }\n    const elementLabel = async (el) => {\n        if (!el || typeof words[el] !== 'string') {\n            return null;\n        }\n        const name = words[el];\n        if (!labelByName[name.toLowerCase()]) {\n            const l = await call('config/label_registry/create', { name });\n            labelByName[name.toLowerCase()] = l.label_id;\n            managed.add(l.label_id);\n            report.labels_created++;\n        }\n\n        return labelByName[name.toLowerCase()];\n    };\n\n    // Differences only\n    const updates = [];\n    for (const [r, e, uid] of matches) {\n        const change = {};\n\n        const area = roomArea[e.room] || null;\n        if ((r.area_id || null) !== area) {\n            change.area_id = area;\n        }\n\n        const name = typeof e.name === 'string' && e.name.trim() !== '' ? e.name.trim() : null;\n        if ((r.name || null) !== name) {\n            change.name = name;\n        }\n\n        const hidden = e.hidden !== 0 || blocks[uid] === true;\n        if (hidden && !r.hidden_by) {\n            change.hidden_by = 'user';\n        } else if (!hidden && r.hidden_by === 'user') {\n            change.hidden_by = null;\n        }\n\n        const current = Array.isArray(r.labels) ? r.labels : [];\n        const wanted = current.filter(l => !managed.has(l));\n        const label = await elementLabel(e.element);\n        if (label) {\n            wanted.push(label);\n        }\n        if (wanted.length !== current.length || wanted.some(l => !current.includes(l))) {\n            change.labels = wanted;\n        }\n\n        if (Object.keys(change).length > 0) {\n            updates.push({ entity_id: r.entity_id, ...change });\n        }\n    }\n\n    // Duplicates: hidden, without area nor element label\n    for (const r of duplicates) {\n        const change = {};\n        if (r.area_id) {\n            change.area_id = null;\n        }\n        if (!r.hidden_by) {\n            change.hidden_by = 'user';\n        }\n        const current = Array.isArray(r.labels) ? r.labels : [];\n        const wanted = current.filter(l => !managed.has(l));\n        if (wanted.length !== current.length) {\n            change.labels = wanted;\n        }\n        if (Object.keys(change).length > 0) {\n            updates.push({ entity_id: r.entity_id, ...change });\n        }\n    }\n\n    // Send by small batches\n    for (let i = 0; i < updates.length; i += 20) {\n        const results = await Promise.allSettled(updates.slice(i, i + 20).map(u => call('config/entity_registry/update', u)));\n        for (const res of results) {\n            if (res.status === 'fulfilled') {\n                report.updated++;\n            } else {\n                report.errors++;\n                node.warn('Home Assistant: ' + res.reason.message);\n            }\n        }\n        node.status({ fill: 'blue', shape: 'dot', text: 'updating ' + Math.min(i + 20, updates.length) + '/' + updates.length });\n    }\n\n    node.status({ fill: report.errors ? 'yellow' : 'green', shape: 'dot', text: report.matched + ' matched, ' + report.duplicates + ' duplicates, ' + report.updated + ' updated, ' + new Date().toLocaleTimeString('fr-FR') });\n    if (report.updated || report.areas_created || report.labels_created || report.errors) {\n        node.log('Home Assistant: ' + JSON.stringify(report));\n    }\n} catch (e) {\n    report.error = e.message;\n    node.status({ fill: 'red', shape: 'dot', text: e.message });\n    node.warn('Home Assistant: ' + e.message);\n} finally {\n    try { ws && ws.close(); } catch (e) { }\n    context.set('running', false);\n}\n\nflow.set('homeassistant', report);\nmsg.payload = report;\n\nreturn msg;\n",
+        "func": "// Mirror dknr-domotic into Home Assistant, through the Home Assistant WebSocket API\n// Nothing is published on MQTT: entities stay those of each dknr-xxx source discovery,\n// matched by their unique_id dknr_<source>_<parent>_<entity> (uid with _ instead of /).\n// Mirrored: area (room), name, hidden (hidden or blocked entity), one label by element.\n// Only entities whose unique_id starts with dknr_ are touched, nothing is ever deleted.\n\nconst url = (env.get('DKNR_HA_URL') || '').trim().replace(/\\/+$/, '');\nconst token = (env.get('DKNR_HA_TOKEN') || '').trim();\nif (url === '' || token === '') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'disabled' });\n\n    return null;\n}\n\n// One run at a time\nif (context.get('running') === true) {\n\n    return null;\n}\n\n// Native WebSocket of Node.js, given by settings.js functionGlobalContext\nconst WS = global.get('WebSocket');\nif (typeof WS !== 'function') {\n    node.status({ fill: 'red', shape: 'dot', text: 'no WebSocket' });\n    node.error('Home Assistant: WebSocket is not available (see functionGlobalContext in settings.js)');\n\n    return null;\n}\n\n// Wait for dknr entities after boot\nconst entities = global.get('entity') || {};\nif (Object.keys(entities).length === 0) {\n\n    return null;\n}\n\nconst wsurl = (url.startsWith('ws') ? url : url.replace(/^http/, 'ws')).replace(/\\/api\\/websocket$/, '') + '/api/websocket';\nconst rooms = (global.get('room') || {}).base || {};\nconst blocks = global.get('block') || {};\nconst lang = ((global.get('auth') || {}).admin || {}).lang || 'fr';\nconst words = { ...(global.get('dictionary.en.option_element') || {}), ...(global.get('dictionary[\"' + lang + '\"].option_element') || {}) };\n\ncontext.set('running', true);\nnode.status({ fill: 'blue', shape: 'dot', text: 'running' });\n\nlet ws = null;\nconst pending = {};\nlet sequence = 0;\n\n// Send a command and wait for its result\nconst call = (type, data) => new Promise((resolve, reject) => {\n    const id = ++sequence;\n    const timer = setTimeout(() => {\n        delete pending[id];\n        reject(new Error(type + ': timeout'));\n    }, 30000);\n    pending[id] = { resolve, reject, timer, type };\n    ws.send(JSON.stringify({ id, type, ...(data || {}) }));\n});\n\n// Open and authenticate\nconst connect = () => new Promise((resolve, reject) => {\n    const timer = setTimeout(() => reject(new Error('connection timeout')), 15000);\n    ws = new WS(wsurl);\n    ws.addEventListener('error', () => {\n        clearTimeout(timer);\n        reject(new Error('connection error to ' + wsurl));\n    });\n    ws.addEventListener('close', () => {\n        for (const id in pending) {\n            clearTimeout(pending[id].timer);\n            pending[id].reject(new Error('connection closed'));\n            delete pending[id];\n        }\n    });\n    ws.addEventListener('message', (event) => {\n        let m = {};\n        try { m = JSON.parse(event.data); } catch (e) { return; }\n        if (m.type === 'auth_required') {\n            ws.send(JSON.stringify({ type: 'auth', access_token: token }));\n        } else if (m.type === 'auth_ok') {\n            clearTimeout(timer);\n            resolve();\n        } else if (m.type === 'auth_invalid') {\n            clearTimeout(timer);\n            reject(new Error('invalid token'));\n        } else if (m.type === 'result' && pending[m.id]) {\n            const p = pending[m.id];\n            delete pending[m.id];\n            clearTimeout(p.timer);\n            if (m.success) {\n                p.resolve(m.result);\n            } else {\n                p.reject(new Error(p.type + ': ' + ((m.error || {}).message || 'failed')));\n            }\n        }\n    });\n});\n\nconst report = {\n    'time': Date.now(),\n    'matched': 0,\n    'updated': 0,\n    'areas_created': 0,\n    'labels_created': 0,\n    'errors': 0\n};\n\ntry {\n    await connect();\n\n    const areas = await call('config/area_registry/list');\n    const states = await call('get_states');\n    const labels = await call('config/label_registry/list');\n    const list = await call('config/entity_registry/list');\n\n    // dknr entities by Home Assistant unique_id\n    const byUnique = {};\n    for (const uid in entities) {\n        byUnique['dknr_' + uid.split('/').join('_')] = uid;\n    }\n\n    // Home Assistant entities from dknr sources, by dknr uid\n    // A unique_id is unique by entity type only: when a source changed the type of an entity,\n    // the old one stays in Home Assistant (unavailable) beside the new one.\n    const alive = {};\n    for (const st of states) {\n        alive[st.entity_id] = st.state !== 'unavailable';\n    }\n    const byUid = {};\n    for (const r of list) {\n        if (r.platform !== 'mqtt' || typeof r.unique_id !== 'string' || !byUnique[r.unique_id]) {\n            continue;\n        }\n        (byUid[byUnique[r.unique_id]] = byUid[byUnique[r.unique_id]] || []).push(r);\n    }\n    const matches = [];\n    const duplicates = [];\n    for (const uid in byUid) {\n        // Keep the entity with a real state, the most recently modified first\n        const rs = byUid[uid].sort((a, b) => (alive[b.entity_id] === true) - (alive[a.entity_id] === true) || (b.modified_at || 0) - (a.modified_at || 0));\n        matches.push([rs[0], entities[uid], uid]);\n        for (const r of rs.slice(1)) {\n            duplicates.push(r);\n        }\n    }\n    report.matched = matches.length;\n    report.duplicates = duplicates.length;\n\n    // Areas by name (dknr room \"> Home\" gives the area \"Home\")\n    const areaName = id => (String((rooms[id] || {}).name || id)).replace(/^>\\s*/, '').trim() || id;\n    const areaByName = {};\n    for (const a of areas) {\n        areaByName[String(a.name).toLowerCase()] = a.area_id;\n    }\n    const roomArea = {};\n    for (const id in rooms) {\n        const name = areaName(id);\n        if (!areaByName[name.toLowerCase()]) {\n            const a = await call('config/area_registry/create', { name });\n            areaByName[name.toLowerCase()] = a.area_id;\n            report.areas_created++;\n        }\n        roomArea[id] = areaByName[name.toLowerCase()];\n    }\n\n    // Labels by element: every label named like an element is managed by dknr\n    const labelByName = {};\n    for (const l of labels) {\n        labelByName[String(l.name).toLowerCase()] = l.label_id;\n    }\n    const managed = new Set();\n    for (const el in words) {\n        const id = labelByName[String(words[el]).toLowerCase()];\n        if (id) {\n            managed.add(id);\n        }\n    }\n    const elementLabel = async (el) => {\n        if (!el || typeof words[el] !== 'string') {\n            return null;\n        }\n        const name = words[el];\n        if (!labelByName[name.toLowerCase()]) {\n            const l = await call('config/label_registry/create', { name });\n            labelByName[name.toLowerCase()] = l.label_id;\n            managed.add(l.label_id);\n            report.labels_created++;\n        }\n\n        return labelByName[name.toLowerCase()];\n    };\n\n    // Differences only\n    const updates = [];\n    for (const [r, e, uid] of matches) {\n        const change = {};\n\n        const area = roomArea[e.room] || null;\n        if ((r.area_id || null) !== area) {\n            change.area_id = area;\n        }\n\n        const name = typeof e.name === 'string' && e.name.trim() !== '' ? e.name.trim() : null;\n        if ((r.name || null) !== name) {\n            change.name = name;\n        }\n\n        const hidden = e.hidden !== 0 || blocks[uid] === true;\n        if (hidden && !r.hidden_by) {\n            change.hidden_by = 'user';\n        } else if (!hidden && r.hidden_by === 'user') {\n            change.hidden_by = null;\n        }\n\n        const current = Array.isArray(r.labels) ? r.labels : [];\n        const wanted = current.filter(l => !managed.has(l));\n        const label = await elementLabel(e.element);\n        if (label) {\n            wanted.push(label);\n        }\n        if (wanted.length !== current.length || wanted.some(l => !current.includes(l))) {\n            change.labels = wanted;\n        }\n\n        if (Object.keys(change).length > 0) {\n            updates.push({ entity_id: r.entity_id, ...change });\n        }\n    }\n\n    // Duplicates: hidden, without area nor element label\n    for (const r of duplicates) {\n        const change = {};\n        if (r.area_id) {\n            change.area_id = null;\n        }\n        if (!r.hidden_by) {\n            change.hidden_by = 'user';\n        }\n        const current = Array.isArray(r.labels) ? r.labels : [];\n        const wanted = current.filter(l => !managed.has(l));\n        if (wanted.length !== current.length) {\n            change.labels = wanted;\n        }\n        if (Object.keys(change).length > 0) {\n            updates.push({ entity_id: r.entity_id, ...change });\n        }\n    }\n\n    // Send by small batches\n    for (let i = 0; i < updates.length; i += 20) {\n        const results = await Promise.allSettled(updates.slice(i, i + 20).map(u => call('config/entity_registry/update', u)));\n        for (const res of results) {\n            if (res.status === 'fulfilled') {\n                report.updated++;\n            } else {\n                report.errors++;\n                node.warn('Home Assistant: ' + res.reason.message);\n            }\n        }\n        node.status({ fill: 'blue', shape: 'dot', text: 'updating ' + Math.min(i + 20, updates.length) + '/' + updates.length });\n    }\n\n    node.status({ fill: report.errors ? 'yellow' : 'green', shape: 'dot', text: report.matched + ' matched, ' + report.duplicates + ' duplicates, ' + report.updated + ' updated, ' + new Date().toLocaleTimeString('fr-FR') });\n    if (report.updated || report.areas_created || report.labels_created || report.errors) {\n        node.log('Home Assistant: ' + JSON.stringify(report));\n    }\n} catch (e) {\n    report.error = e.message;\n    node.status({ fill: 'red', shape: 'dot', text: e.message });\n    node.warn('Home Assistant: ' + e.message);\n} finally {\n    try { ws && ws.close(); } catch (e) { }\n    context.set('running', false);\n}\n\nglobal.set('homeassistant', report);\nmsg.payload = report;\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -23211,6 +23237,328 @@
         "libs": [],
         "x": 360,
         "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "db23a3630ba60ab4",
+        "type": "function",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "name": "data",
+        "func": "/*\nHouse status dialog (admin): things to check, summary of the day, services.\nSame data as Telegram: list_problems and list_sources tools, energy of the day,\noutdoor temperatures (InfluxDB) and forecast. Outputs: dialog title, then title and table\nof each part. Tables rows: { id, icon (html), label, detail, value }.\n*/\n\n// Check user access\nmsg.access = 'config.status';\nmsg = await node.linkcall('common - user - access', msg);\nif (!msg.allowed) {\n    msg.enabled = false;\n}\n\n// Check display\nmsg = await node.linkcall('common - ui - enable', msg);\n\nif (!msg.enabled) {\n\n    return [msg, msg, msg, msg, msg, msg, msg];\n}\n\nconst d = msg.dictionary.config || {};\nconst t = msg.dictionary.telegram || {};\nconst locale = (msg.dictionary.common || {}).locales || 'fr';\nconst colors = { ...(global.get('describe.color') || {}) };\nconst fill = (s, v) => String(s || '').replace(/\\{(\\w+)\\}/g, (m, k) => v[k] !== undefined ? v[k] : m);\nconst html = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n// Telegram texts without their HTML and leading emoji\nconst plain = (s) => String(s || '').replace(/<[^>]+>/g, '').replace(/^[^\\p{L}\\p{N}]+/u, '').trim();\nconst number = (v, dec) => {\n    const n = Number(v);\n\n    return v === '' || v === null || isNaN(n) ? '-' : n.toLocaleString(locale, { 'maximumFractionDigits': dec ?? 1 });\n};\nconst icon = (mdi, color, title) => '<i class=\"dknr-row-icon mdi mdi-' + mdi + '\" style=\"color:' + (color || colors.theme) + '\"' + (title ? ' title=\"' + html(title) + '\"' : '') + '></i>';\nconst date = (iso) => iso ? new Date(iso).toLocaleString(locale, { 'day': 'numeric', 'month': 'short', 'hour': '2-digit', 'minute': '2-digit' }) : '-';\nconst since = (iso) => {\n    if (!iso) {\n\n        return '';\n    }\n    const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));\n    const v = m >= 2880 ? fill(t.days, { 'n': Math.round(m / 1440) }) : (m >= 120 ? fill(t.hours, { 'n': Math.round(m / 60) }) : fill(t.minutes, { 'n': m }));\n\n    return fill(t.since, { 'd': v });\n};\n\nconst entities = global.get('entity') || {};\nconst blocks = global.get('block') || {};\nconst rooms = global.get('room.base') || {};\nconst roomName = (id) => String((rooms[id] || {}).name || '').replace(/^>\\s*/, '');\nconst entityName = (uid) => {\n    const e = entities[uid] || {};\n\n    return e.name && e.name !== e.id ? e.name : uid;\n};\n\nlet i = 0;\nconst row = (mdi, color, label, detail, value, title) => ({ 'id': 'r' + (i++), 'icon': icon(mdi, color, title), 'label': label, 'detail': detail || '', 'value': value ?? '' });\nconst send = (out) => {\n    let a = [null, null, null, null, null, null, null];\n    for (const k in out) {\n        a[k] = { ...msg, 'payload': out[k] };\n    }\n    node.send(a);\n};\n\n// Titles, and wait message\nconst wait = [row('timer-sand', colors.empty, d.status_loading || 'Loading...', '', '')];\nsend({\n    0: d.status || 'House status',\n    1: d.status_problems || 'Things to check',\n    2: wait,\n    3: d.status_summary || 'Summary of the day',\n    4: wait,\n    5: d.status_services || 'Services',\n    6: wait\n});\n\n// --- Things to check ---\n\nlet problems = [];\ntry {\n    const r = await node.linkcall('common - house - tool', { 'hmi': { 'login': msg.hmi.login }, 'tool': 'list_problems' }, { 'timeout': 60000 });\n    const p = r.payload || {};\n    for (const b of (p.alerts || [])) {\n        problems.push(row('alert', colors.off, plain(t.alert) || 'Alert', entityName(b.uid), roomName(b.room), b.uid));\n    }\n    for (const b of (p.low_batteries || [])) {\n        problems.push(row('battery-alert-variant-outline', colors.median, plain(t.battery) || 'Low battery', entityName(b.uid) + (roomName(b.room) ? ' (' + roomName(b.room) + ')' : ''), number(b.value, 0) + ' %', b.uid));\n    }\n    for (const b of (p.silent || [])) {\n        problems.push(row('signal-off', colors.median, plain(t.silent) || 'Silent', entityName(b.uid) + (roomName(b.room) ? ' (' + roomName(b.room) + ')' : ''), since(b.seen), b.uid));\n    }\n    for (const a of (Array.isArray(p.scene_anomalies) ? p.scene_anomalies : [])) {\n        const reasons = Object.keys(a.reasons || {}).map(k => k + ': ' + a.reasons[k]).join(', ');\n        problems.push(row('movie-open-cog-outline', colors.off, plain(t.scene) || 'Scene', a.target_name || a.target, a.at ? date(a.at) : '', reasons));\n    }\n    if (problems.length === 0) {\n        problems.push(row('check-circle-outline', colors.on, plain(t.problems_none) || 'Nothing to check', '', ''));\n    }\n} catch (err) {\n    problems = [row('alert-circle-outline', colors.off, d.status_error || 'Error', err.message, '')];\n}\nsend({ 2: problems });\n\n// --- Summary of the day ---\n\nlet summary = [];\n\n// Outdoor temperatures chosen in the Energy page: min / max of today\nconst sensors = [global.get('energy[\"outdoor_temperature\"]') || '', global.get('energy[\"outdoor_temperature_2\"]') || '']\n    .filter((uid, k, all) => uid !== '' && all.indexOf(uid) === k && typeof entities[uid] === 'object' && entities[uid].hidden === 0 && blocks[uid] !== true && /^[A-Za-z0-9_\\-./]+$/.test(uid));\nif (sensors.length > 0) {\n    const midnight = new Date();\n    midnight.setHours(0, 0, 0, 0);\n    let values = {};\n    for (const fn of ['min', 'max']) {\n        try {\n            const r = await node.linkcall('common - house - influxdb', {\n                'query':\n                    'from(bucket: \"domotic\")' +\n                    '|> range(start: ' + midnight.toISOString() + ', stop: now())' +\n                    '|> filter(fn: (r) => ' + sensors.map(u => 'r[\"_field\"] == \"' + u + '\"').join(' or ') + ')' +\n                    '|> toFloat()' +\n                    '|> ' + fn + '()' +\n                    '|> yield(name: \"' + fn + '\")',\n                'payload': ''\n            }, { 'timeout': 20000 });\n            for (const v of (Array.isArray(r.payload) ? r.payload : [])) {\n                values[v._field] = values[v._field] || {};\n                values[v._field][fn] = v._value;\n            }\n        } catch (err) {\n            node.warn('status ' + fn + ': ' + err.message);\n        }\n    }\n    for (const uid of sensors) {\n        const v = values[uid] || {};\n        summary.push(row('thermometer', colors.theme, entityName(uid), number(v.min) + ' → ' + number(v.max) + ' °C', number(entities[uid].value) + ' °C', uid));\n    }\n}\n\n// Tomorrow forecast (OpenWeatherMap, when set in the Energy page)\nconst weather = global.get('weather') || [];\nlet tomorrow = new Date();\ntomorrow.setHours(0, 0, 0, 0);\ntomorrow.setDate(tomorrow.getDate() + 1);\nconst from = tomorrow.getTime();\nconst forecast = (Array.isArray(weather) ? weather : []).filter(w => w.ts >= from && w.ts < from + 86400000).map(w => Number(w.temperature)).filter(v => !isNaN(v));\nif (forecast.length > 0) {\n    summary.push(row('weather-partly-cloudy', colors.theme, d.status_tomorrow || 'Tomorrow', number(Math.min(...forecast), 0) + ' → ' + number(Math.max(...forecast), 0) + ' °C', ''));\n}\n\n// Energy of the day (same as the Energy page summary, today column)\ntry {\n    const r = await node.linkcall('common - energy - day', { 'dictionary': msg.dictionary, 'payload': [] }, { 'timeout': 30000 });\n    const e = typeof r.payload === 'object' && r.payload !== null ? r.payload : {};\n    for (const l of (Array.isArray(e.lines) ? e.lines : [])) {\n        if (Array.isArray(l.values) && typeof l.values[1] === 'number') {\n            summary.push(row('lightning-bolt', colors.theme, l.label, '', number(l.values[1], 2) + ' ' + (e.unit || 'kWh')));\n        }\n    }\n    if (Array.isArray(e.ratio) && e.ratio[1] !== null && e.ratio[1] !== undefined) {\n        summary.push(row('solar-power-variant-outline', colors.theme, d.status_ratio || 'Self-sufficiency', '', e.ratio[1] + ' %'));\n    }\n} catch (err) {\n    node.warn('status energy: ' + err.message);\n}\nif (summary.length === 0) {\n    summary.push(row('information-outline', colors.empty, d.status_empty || 'No data', '', ''));\n}\nsend({ 4: summary });\n\n// --- Services ---\n\nlet services = [];\nconst ok = colors.on;\nconst ko = colors.off;\nconst off = colors.empty;\n\n// MQTT (never the password)\nconst mqtt = global.get('mqtt') || {};\nservices.push(row('database', mqtt.enabled ? ok : off, 'MQTT', mqtt.enabled ? (mqtt.host || '') + (mqtt.port ? ':' + mqtt.port : '') : (d.status_disabled || 'Disabled'), mqtt.enabled ? (mqtt.topic || '') : ''));\n\n// DKNR sources\ntry {\n    const r = await node.linkcall('common - house - tool', { 'hmi': { 'login': msg.hmi.login }, 'tool': 'list_sources' }, { 'timeout': 30000 });\n    for (const s of (Array.isArray(r.payload) ? r.payload : [])) {\n        const silent = Number(s.silent_visible_entities) || 0;\n        services.push(row(\n            silent > 0 ? 'access-point-network-off' : 'access-point-network',\n            silent > 0 ? ko : ok,\n            (s.title || s.source) + (s.version ? ' ' + s.version : ''),\n            fill(d.status_source || '{parents} devices, {entities} entities', { 'parents': s.parents, 'entities': s.entities }) + (silent > 0 ? ', ' + fill(d.status_source_silent || '{n} silent', { 'n': silent }) : ''),\n            s.started ? date(s.started) : '',\n            s.started ? (d.status_started || 'Started') + ' ' + date(s.started) : ''\n        ));\n    }\n} catch (err) {\n    services.push(row('alert-circle-outline', ko, d.status_sources || 'Sources', err.message, ''));\n}\n\n// Home Assistant mirror\nconst ha = global.get('homeassistant') || null;\nif ((env.get('DKNR_HA_URL') || '') === '' || (env.get('DKNR_HA_TOKEN') || '') === '') {\n    services.push(row('home-assistant', off, 'Home Assistant', d.status_disabled || 'Disabled', ''));\n} else if (ha === null) {\n    services.push(row('home-assistant', off, 'Home Assistant', d.status_waiting || 'Waiting first run', ''));\n} else if (ha.error) {\n    services.push(row('home-assistant', ko, 'Home Assistant', ha.error, date(ha.time)));\n} else {\n    services.push(row('home-assistant', ha.errors ? ko : ok, 'Home Assistant', fill(d.status_ha || '{matched} entities, {duplicates} duplicates, {updated} updated', ha), date(ha.time)));\n}\n\n// Telegram\nconst auth = global.get('auth') || {};\nconst linked = Object.keys(auth).filter(l => String((auth[l] || {}).telegram || '') !== '').length;\nconst telegram = (env.get('DKNR_TELEGRAM_TOKEN') || '') !== '';\nservices.push(row('send', telegram ? ok : off, 'Telegram', telegram ? fill(d.status_linked || '{n} linked accounts', { 'n': linked }) : (d.status_disabled || 'Disabled'), telegram ? (env.get('DKNR_TELEGRAM_SUMMARY') || '20:00') : ''));\n\n// MCP keys\nconst keys = Object.keys(auth).filter(l => typeof (auth[l] || {}).mcp === 'object' && auth[l].mcp !== null && auth[l].mcp.hash).length;\nservices.push(row('robot-outline', keys > 0 ? ok : off, 'MCP', fill(d.status_keys || '{n} keys', { 'n': keys }), ''));\n\nsend({ 6: services });\n\nreturn null;\n",
+        "outputs": 7,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 1660,
+        "wires": [
+            [
+                "a1a8034121da7fe7"
+            ],
+            [
+                "56780baff00cdd4f"
+            ],
+            [
+                "a21a324a53941dd6"
+            ],
+            [
+                "294aa82f573502e6"
+            ],
+            [
+                "27fec75ec1415c9a"
+            ],
+            [
+                "47588d39451e3bf0"
+            ],
+            [
+                "3fd87c00d1c17853"
+            ]
+        ]
+    },
+    {
+        "id": "a1a8034121da7fe7",
+        "type": "ui-text",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "9be6b9f2f3604880",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "name": "config - status - title",
+        "label": "",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "dknr-title",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 640,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "56780baff00cdd4f",
+        "type": "ui-text",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "9be6b9f2f3604880",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "name": "config - status - problems - title",
+        "label": "",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 14,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 640,
+        "y": 1540,
+        "wires": []
+    },
+    {
+        "id": "a21a324a53941dd6",
+        "type": "ui-table",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "9be6b9f2f3604880",
+        "name": "config - status - problems",
+        "label": "",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "maxrows": 0,
+        "passthru": false,
+        "autocols": false,
+        "showSearch": false,
+        "deselect": true,
+        "selectionType": "none",
+        "columns": [
+            {
+                "title": "",
+                "key": "icon",
+                "keyType": "key",
+                "type": "html",
+                "width": "20px",
+                "align": "center"
+            },
+            {
+                "title": "",
+                "key": "label",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "detail",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "value",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "end"
+            }
+        ],
+        "mobileBreakpoint": "sm",
+        "mobileBreakpointType": "defaults",
+        "action": "replace",
+        "className": "",
+        "x": 640,
+        "y": 1600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "294aa82f573502e6",
+        "type": "ui-text",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "9be6b9f2f3604880",
+        "order": 4,
+        "width": 0,
+        "height": 0,
+        "name": "config - status - summary - title",
+        "label": "",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 14,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 640,
+        "y": 1660,
+        "wires": []
+    },
+    {
+        "id": "27fec75ec1415c9a",
+        "type": "ui-table",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "9be6b9f2f3604880",
+        "name": "config - status - summary",
+        "label": "",
+        "order": 5,
+        "width": 0,
+        "height": 0,
+        "maxrows": 0,
+        "passthru": false,
+        "autocols": false,
+        "showSearch": false,
+        "deselect": true,
+        "selectionType": "none",
+        "columns": [
+            {
+                "title": "",
+                "key": "icon",
+                "keyType": "key",
+                "type": "html",
+                "width": "20px",
+                "align": "center"
+            },
+            {
+                "title": "",
+                "key": "label",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "detail",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "value",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "end"
+            }
+        ],
+        "mobileBreakpoint": "sm",
+        "mobileBreakpointType": "defaults",
+        "action": "replace",
+        "className": "",
+        "x": 640,
+        "y": 1720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "47588d39451e3bf0",
+        "type": "ui-text",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "9be6b9f2f3604880",
+        "order": 6,
+        "width": 0,
+        "height": 0,
+        "name": "config - status - services - title",
+        "label": "",
+        "format": "{{msg.payload}}",
+        "layout": "row-left",
+        "style": false,
+        "font": "",
+        "fontSize": 14,
+        "color": "#717171",
+        "wrapText": false,
+        "className": "",
+        "value": "payload",
+        "valueType": "msg",
+        "x": 640,
+        "y": 1780,
+        "wires": []
+    },
+    {
+        "id": "3fd87c00d1c17853",
+        "type": "ui-table",
+        "z": "d90937c9d5b88b24",
+        "g": "8455e62e4f171015",
+        "group": "9be6b9f2f3604880",
+        "name": "config - status - services",
+        "label": "",
+        "order": 7,
+        "width": 0,
+        "height": 0,
+        "maxrows": 0,
+        "passthru": false,
+        "autocols": false,
+        "showSearch": false,
+        "deselect": true,
+        "selectionType": "none",
+        "columns": [
+            {
+                "title": "",
+                "key": "icon",
+                "keyType": "key",
+                "type": "html",
+                "width": "20px",
+                "align": "center"
+            },
+            {
+                "title": "",
+                "key": "label",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "detail",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "start"
+            },
+            {
+                "title": "",
+                "key": "value",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "end"
+            }
+        ],
+        "mobileBreakpoint": "sm",
+        "mobileBreakpointType": "defaults",
+        "action": "replace",
+        "className": "",
+        "x": 640,
+        "y": 1840,
         "wires": [
             []
         ]
