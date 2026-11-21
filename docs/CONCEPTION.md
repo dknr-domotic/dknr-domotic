@@ -19,9 +19,9 @@ dknr-domotic est le tableau de bord et le cerveau des projets DKNR : il lit les 
 
 ## Organisation du flow
 
-Onglets : `common` (logique partagée), `home`, `energy`, `calendar`, `room`, `scene`, `entity`, `config`, `auth`, `mcp` (serveur MCP, voir plus bas).
+Onglets : `common` (logique partagée), `home`, `energy`, `calendar`, `room`, `scene`, `entity`, `config`, `auth`, `mcp` (serveur MCP), `telegram` (bot Telegram), voir plus bas.
 
-* Les traitements partagés sont des groupes `common - ...` appelés par **link call** (`await node.linkcall('common - ...', msg)`) : `common - entity - merge`, `common - entity - set`, `common - entity - get`, `common - scene`, `common - influxdb`, `common - energy`, `common - weather`, `common - dknr - ...`, `common - mqtt - publish`, `common - room - mqtt`, `common - ui - ...` (hmi, notice, enable, group, tab, control, latency), `common - user - ...`, `common - register - page`, `common - register - dictionary`.
+* Les traitements partagés sont des groupes `common - ...` appelés par **link call** (`await node.linkcall('common - ...', msg)`) : `common - entity - merge`, `common - entity - set`, `common - entity - get`, `common - scene`, `common - influxdb`, `common - energy`, `common - energy - day` (énergie d'hier et d'aujourd'hui : résumé de la page Energie et de Telegram), `common - house - tool` (outils de lecture du MCP et de Telegram), `common - house - influxdb`, `common - weather`, `common - dknr - ...`, `common - mqtt - publish`, `common - room - mqtt`, `common - ui - ...` (hmi, notice, enable, group, tab, control, latency), `common - user - ...`, `common - register - page`, `common - register - dictionary`.
 * Chaque page s'enregistre (`describe.page`) et enregistre ses textes (`dictionary`, français et anglais).
 * Tableau de bord FlowFuse Dashboard 2. Nommage des widgets : `ui - page - <page>`, `ui - group|dialog - <page> - <nom>`.
 * Classes CSS du projet préfixées `dknr-` (ex : `dknr-row-icon`, `dknr-center`).
@@ -37,9 +37,9 @@ Données persistées (export / import sélectif depuis la page Configuration : a
 | `entity` | entités par identifiant `source/parent/id` |
 | `discovery` | dernière discovery reçue par entité |
 | `source`, `parent` | sources et appareils déclarés |
-| `room` | `base` (pièces : id, nom, `outdoor` 1/0), `confort` (plages par pièce), `workday` (jours `d0`..`d6` à 1/0 par pièce), `location`, `map`, `camera` |
+| `room` | `base` (pièces : id, nom, `outdoor` 1/0, plus utilisé par les traitements pour le moment), `confort` (plages par pièce), `workday` (jours `d0`..`d6` à 1/0 par pièce), `location`, `map`, `camera` |
 | `scene` | scènes par entité cible |
-| `energy` | entités choisies pour l'énergie (puissances, batterie, compteurs, `preferred_tariff`...) |
+| `energy` | entités choisies pour l'énergie (puissances, batterie, compteurs, `preferred_tariff`...) et sondes de température extérieure (`outdoor_temperature`, `outdoor_temperature_2`) |
 | `calendar`, `user`, `auth`, `mqtt`, `block` | calendrier, sessions des utilisateurs, comptes (rechargés depuis `user.json`), configuration MQTT, entités bloquées |
 
 Données de fonctionnement : `describe` (templates, éléments, routines par élément, unités textuelles, enums de la source dknr, pages, niveaux d'accès `describe.access`), `dictionary`, `form` (formulaires par onglet, clé `msg.hmi.id`), `stop`, `boot`, `sourceboot` (heure de démarrage annoncée par chaque source).
@@ -113,7 +113,7 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 * **power** : arrêt si la puissance reste sous le seuil bas 10 s (sur une copie du message).
 * **daily** : une fois par jour, marquée seulement quand la commande part réellement (`rsp`) ; remise à zéro chaque matin à 8h et depuis la page Configuration.
 * **duration** : minuteur à l'allumage (par scène ou à la main), extinction par le cron à expiration, minuteur arrêté à l'extinction.
-* **thermostat** : sondes intérieures (pièces non extérieures, `outdoor` 1 ou `true`) et extérieures, consigne confort / éco / hors gel, durée de chauffe calculée par cycle, arrêt fenêtre ouverte, froid sur énergie solaire ; il n'écrit que ses champs `temperature_*` dans la scène ; réévalué chaque minute par le cron.
+* **thermostat** : sondes intérieures (déclencheurs `temperature` de la scène, sauf les sondes extérieures) et température extérieure (moyenne des sondes `outdoor_temperature` et `outdoor_temperature_2` de la page Energie, une seule suffit ; elles déclenchent toutes les scènes thermostat sans être dans leurs déclencheurs, niveau toujours haut), consigne confort / éco / hors gel, durée de chauffe calculée par cycle, arrêt fenêtre ouverte, froid sur énergie solaire ; il n'écrit que ses champs `temperature_*` dans la scène ; réévalué chaque minute par le cron.
 * **cron** (chaque minute) : minuteurs expirés (la cible sert de déclencheur avec la valeur `off`) et thermostats.
 * Les routines liées à l'heure (nocturnal, diurnal, confort, eco, nightlight) ne se réévaluent que sur un déclencheur : ajouter `dknr/sensor/nycthemer` comme déclencheur pour suivre le jour / la nuit.
 
@@ -136,7 +136,7 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 * Une session expire après la durée d'inactivité choisie dans Configuration > Divers (`session_duration` en heures dans le stockage `file` : 6, 24 ou 720, 720 par défaut), vérifiée par `common - ui - hmi` et `common - user - clean`. `user` est persistant (copié dans le stockage `file`), les sessions survivent au redémarrage.
 * Événements `ui-control` : `lost` (onglet fermé) supprime seulement `form` de l'onglet ; `connect` renvoie vers la page d'authentification seulement sans session ouverte, sinon l'onglet reste sur sa page et `change` vérifie les droits de la page. La déconnexion depuis la page d'authentification renvoie tous les onglets du navigateur (`msg._client.clientId`).
 * `auth` est rechargé au démarrage depuis `/data/backup/user.json` (pas depuis le stockage `file`) : toute modification des comptes (création, suppression, import) doit l'écrire par un lien vers `common - user - write`.
-* Compte principal `admin` : son mot de passe vient de l'environnement, `DKNR_ADMIN_PASSWORD` ou à défaut `DKNR_PASSWORD` (`admin` en dernier recours, avec un avertissement dans les logs). Il est appliqué à chaque démarrage par `common - user - read` (haché bcrypt, niveau forcé à `admin`, langue et Telegram conservés, autres comptes conservés ; sans fichier `user.json` ou par l'inject `raz auth`, seul `admin` est recréé). L'interface ne peut pas le modifier : la création refuse l'identifiant `admin`, l'import n'ajoute que les comptes absents.
+* Compte principal `admin` : son mot de passe vient de l'environnement, `DKNR_ADMIN_PASSWORD` ou à défaut `DKNR_PASSWORD` (`admin` en dernier recours, avec un avertissement dans les logs). Il est appliqué à chaque démarrage par `common - user - read` (haché bcrypt, niveau forcé à `admin`, langue conservée, Telegram pris dans `DKNR_TELEGRAM_ID` ou à défaut conservé, autres comptes conservés ; sans fichier `user.json` ou par l'inject `raz auth`, seul `admin` est recréé). L'interface ne peut pas le modifier : la création refuse l'identifiant `admin`, l'import n'ajoute que les comptes absents.
 * Liste des utilisateurs (`ui - dialog - config - users`) : identifiant, niveau, langue, sessions ouvertes, boutons Déconnecter et Supprimer. Un `admin` agit sur tous les autres comptes, un `parent` seulement sur les `kid` et `visitor`, personne sur son propre compte ; le compte `admin` n'est jamais supprimé. Les droits sont recalculés à l'action. Déconnecter ferme les sessions du compte et renvoie ses navigateurs vers la page d'authentification (`ui-control` ciblé par `msg._client.clientId`, ou `socketId` pour une session sans clientId).
 * Un bouton de tableau dont le libellé est vide est masqué (style `.v-table td .v-btn:has(.v-btn__content:empty)`).
 
@@ -185,7 +185,8 @@ dknr-domotic expose un serveur [MCP](https://modelcontextprotocol.io) pour qu'un
 
 * JSON-RPC 2.0 sur HTTP (transport « Streamable HTTP » de MCP, réponses JSON simples, sans session ni SSE). Méthodes : `initialize` (renvoie la version du protocole demandée si elle est connue), `ping`, `tools/list`, `tools/call` ; une notification (sans `id`) reçoit 202. Lot (tableau) accepté.
 * Résultat d'un outil : `content` texte contenant du JSON ; erreur d'outil : `isError: true` avec le message (refus d'accès compris).
-* Historique : link call `mcp - influxdb` (nœud `influxdb in`), limité à 7 jours et 300 points environ (fenêtre d'agrégation calculée).
+* Les outils sont dans le link call `common - house - tool` (onglet `common`), partagé avec Telegram : `msg.hmi` (login), `msg.tool` (nom, vide pour la liste), `msg.arguments` ; réponse dans `msg.payload`, ou `msg.tool_error` (refus d'accès compris) et `msg.tool_internal` (erreur inattendue). L'onglet `mcp` ne garde que l'authentification et JSON-RPC.
+* Historique : link call `common - house - influxdb` (nœud `influxdb in`), limité à 7 jours et 300 points environ (fenêtre d'agrégation calculée).
 * Débogage d'une scène : link call `common - scene - summary` (le résumé des échecs est dans le contexte flow de l'onglet `common`), qui rend aussi l'heure du dernier ordre réussi (`msg.routine`).
 
 ### Outils (lecture seule)
@@ -208,9 +209,47 @@ dknr-domotic expose un serveur [MCP](https://modelcontextprotocol.io) pour qu'un
 * Création de scènes depuis l'assistant, une fois les scènes de l'installation en place.
 
 
+## Telegram
+
+Bot Telegram dans l'onglet `telegram` : questions sur la maison (lecture seule), alertes et résumé journalier. Pas de docker à part : les comptes, les niveaux et les outils de lecture sont déjà dans dknr-domotic.
+
+### Réseau et variables
+
+* **Long polling** (`getUpdates`, 50 s) avec des nœuds `http request` : uniquement des appels sortants vers `api.telegram.org`, ni webhook ni HTTPS entrant. Aucune dépendance npm en plus.
+* `DKNR_TELEGRAM_TOKEN` : jeton du bot ; vide ou absent, tout Telegram est désactivé (rien ne tourne). Un jeton ne sert qu'à un conteneur (sinon 409 de Telegram).
+* `DKNR_TELEGRAM_ID` : numéro de chat du compte `admin`, appliqué à chaque démarrage (voir Utilisateurs).
+* `DKNR_TELEGRAM_SUMMARY` : heure du résumé (`hh:mm`, `20:00` par défaut, `off` pour aucun).
+
+### Comptes liés
+
+* Un compte est lié quand son champ `telegram` (formulaire utilisateur de Configuration, ou `DKNR_TELEGRAM_ID` pour `admin`) contient un numéro de chat. Un chat inconnu n'a aucune réponse, sauf un chat privé qui reçoit son numéro (une fois par heure au plus) pour le donner à l'administrateur. Un groupe peut être lié à un compte : tout le groupe a alors les droits de ce compte.
+* Un compte lié reçoit tout (alertes, résumé). Les questions passent par `common - house - tool` avec le login du compte : mêmes clés d'accès que les pages et le MCP (un enfant ne voit pas les scènes, par exemple).
+* Textes français et anglais enregistrés par `telegram - boot` (dictionnaire `telegram`), langue du compte.
+
+### Flow
+
+* `telegram - bot` : `start` (jeton, menu des commandes `setMyCommands` en anglais et en français, identifiant de boucle qui arrête une ancienne boucle au redéploiement), `poll`, `updates` (offset gardé dans le contexte `file`, messages de plus de 10 minutes ignorés), nouvel essai après 30 s en cas d'erreur.
+* `telegram - message` : `command`. Commandes anglaises et françaises (`/house` `/maison`, `/rooms` `/pieces`, `/room` `/piece`, `/search` `/cherche`, `/problems` `/problemes`, `/scenes`, `/summary` `/resume`, `/help` `/aide`) ; un texte sans commande est une pièce (nom ou identifiant, sans casse ni accents) ou à défaut une recherche. Valeurs affichées comme dans les pièces (allumé / éteint, ouvert / fermé, options des enum). 60 lignes au plus.
+* `telegram - send` : `msg.chat` (ou `all` : tous les comptes liés) et `msg.text` en HTML, coupé en messages de 4000 caractères, 1 message par seconde ; `msg.api` et `msg.body` pour un autre appel.
+* `telegram - watch` (chaque minute, 5 minutes après le démarrage) : résumé à l'heure prévue (une fois par jour, date gardée dans le contexte `file`) et alertes.
+* `telegram - summary` (link call, `msg.lang` → `msg.text`) : températures min / max du jour des sondes extérieures choisies dans la page Energie (InfluxDB), prévision du lendemain (OpenWeatherMap, si réglé), énergie du jour (`common - energy - day`, colonne aujourd'hui, autosuffisance) et ce qui reste à vérifier.
+
+### Alertes
+
+* Problèmes = outil `list_problems` lu en `admin` : alertes actives (dont les entités de défaut des sources), piles faibles, entités muettes, anomalies de scène. Clé par problème (`alert:<uid>`, `battery:<uid>`, `silent:<uid>`, `scene:<cible>:<routines>`).
+* Problèmes connus gardés dans le contexte `file` : pas de rafale au redémarrage. Au tout premier passage, rien n'est envoyé (état de départ).
+* Un message par passage (nouveaux, puis résolus), 30 lignes au plus par partie. Un problème n'est « résolu » qu'après une absence de 2 minutes (alerte), 10 minutes (muet, scène) ou 6 heures (pile), pour éviter les va-et-vient.
+* Rien pendant le démarrage (`boot` / `stop`).
+
+### Suite possible
+
+* Commandes de pilotage, désactivées par défaut comme pour le MCP (serrures et alarme toujours exclues).
+* Evénements du calendrier du lendemain (poubelles, anniversaires) dans le résumé.
+
+
 ## Pistes et points ouverts
 
 * Délestage des thermostats quand la puissance dépasse l'abonnement (`temperature_duration_offloading` déjà prévu, non utilisé).
-* Champs présents mais pas encore utilisés : Telegram des utilisateurs, topic Home Assistant de la configuration MQTT.
+* Champ présent mais pas encore utilisé : topic Home Assistant de la configuration MQTT.
 * Ordre en attente des volets sans expiration (à revoir si un cas gênant apparaît).
 * Projet lié en conception : dknr-alexa (voir son `docs/CONCEPTION.md`).
