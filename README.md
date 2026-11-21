@@ -24,6 +24,7 @@ La documentation détaillée est sur [dknr-domotic.github.io](https://dknr-domot
 - **Entités** : nom, pièce, élément, groupe et unité de chaque entité, par source.
 - **Modes de la maison** (source interne `dknr`) : automatisme général, jour / nuit, lumières, volets, chauffe-eau, chauffage, ventilation, son, en automatique, forcés ou manuels.
 - **Utilisateurs** avec niveau d'accès et langue (français, anglais), session conservée au rafraîchissement de la page et au redémarrage (durée réglable : 6 h, 24 h ou 30 jours), liste des comptes pour déconnecter ou supprimer un utilisateur (administrateur et parent).
+- **Telegram** : questions sur la maison depuis Telegram, alertes (nouveau problème, problème résolu) et résumé journalier.
 - **Historique** des valeurs dans InfluxDB.
 - **Sauvegarde et restauration** de la configuration, en choisissant les données à exporter.
 
@@ -46,6 +47,9 @@ Le fichier docker-compose.yaml à la racine du dépôt lance **InfluxDB** et **D
 * **DKNR_PASSWORD** : mot de passe de l'interface node-red et d'InfluxDB.
 * **DKNR_SECRET**   : un mot secret pour encrypter les credits, utilisé aussi comme jeton d'InfluxDB.
 * **DKNR_ADMIN_PASSWORD** (facultatif) : mot de passe du compte `admin` du tableau de bord. À défaut, c'est **DKNR_PASSWORD**.
+* **DKNR_TELEGRAM_TOKEN** (facultatif) : jeton du bot Telegram. Sans lui, Telegram est désactivé.
+* **DKNR_TELEGRAM_ID** (facultatif) : numéro de chat Telegram du compte `admin`.
+* **DKNR_TELEGRAM_SUMMARY** (facultatif) : heure du résumé journalier, `20:00` par défaut, `off` pour ne pas l'envoyer.
 
 Le mot de passe du compte `admin` du tableau de bord ne se change pas dans l'interface : il est appliqué à chaque démarrage depuis ces variables. Pour le changer, modifiez la variable et redémarrez le conteneur.
 
@@ -107,6 +111,23 @@ DKNR Domotic expose un serveur [MCP](https://modelcontextprotocol.io) en lecture
 2. Déclarez le serveur dans votre client MCP avec la clé dans l'en-tête `x-api-key` (ou `Authorization: Bearer <clé>`). Par exemple avec Claude Code : `claude mcp add --transport http dknr http://<ip>:1880/mcp --header "x-api-key: <clé>"`.
 
 La clé donne les droits de son utilisateur, ni plus ni moins. Le serveur est fait pour le réseau local : ne l'ouvrez pas vers internet sans proxy HTTPS.
+
+
+## Telegram
+
+DKNR Domotic peut répondre à des questions sur la maison depuis Telegram et y envoyer des alertes et un résumé journalier. Le bot ne fait que des appels sortants vers Telegram : rien à ouvrir depuis internet.
+
+1. Créez un bot avec [@BotFather](https://t.me/BotFather) et mettez son jeton dans **DKNR_TELEGRAM_TOKEN**.
+2. Écrivez au bot depuis Telegram : s'il ne vous connaît pas, il répond avec votre numéro de chat.
+3. Mettez ce numéro dans **DKNR_TELEGRAM_ID** pour le compte `admin` (puis redémarrez le conteneur), ou dans le champ **Telegram** d'un utilisateur (page **Configuration**).
+
+Un compte lié reçoit tout : les alertes et le résumé journalier. Les questions suivent les droits de son niveau, comme le tableau de bord.
+
+* Commandes : `/maison`, `/pieces`, `/piece nom`, `/cherche texte`, `/problemes`, `/scenes`, `/resume` (en anglais : `/house`, `/rooms`, `/room`, `/search`, `/problems`, `/scenes`, `/summary`). Un nom de pièce ou un texte sans commande marche aussi.
+* Alertes : entités muettes, piles faibles, alertes actives (dont les défauts des sources), scènes en erreur. Un message quand un problème apparaît, un autre quand il est résolu.
+* Résumé journalier : températures extérieures du jour, prévision du lendemain, énergie du jour et ce qui reste à vérifier.
+
+Un seul conteneur doit utiliser un même jeton : un second conteneur (de test par exemple) a besoin de son propre bot.
 
 
 ## A faire

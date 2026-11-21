@@ -76,7 +76,15 @@
         "type": "tab",
         "label": "mcp",
         "disabled": false,
-        "info": "Serveur MCP en lecture seule (voir docs/CONCEPTION.md, Serveur MCP).",
+        "info": "Serveur MCP en lecture seule (voir docs/CONCEPTION.md, Serveur MCP). Outils dans common - house - tool, partagés avec Telegram.",
+        "env": []
+    },
+    {
+        "id": "fd2a6bc9e0687100",
+        "type": "tab",
+        "label": "telegram",
+        "disabled": false,
+        "info": "Bot Telegram : questions sur la maison (lecture seule), alertes et résumé journalier (voir docs/CONCEPTION.md, Telegram). Désactivé sans DKNR_TELEGRAM_TOKEN.",
         "env": []
     },
     {
@@ -1492,8 +1500,6 @@
             "65543cf1dc7d3fa9",
             "79496a4ad5ecd54e",
             "143d84fb671b2165",
-            "5548b0e73792b395",
-            "77b84039cfe9c26b",
             "1bd1f7f3822e061a",
             "fc655f1b25e01fb5"
         ],
@@ -3309,7 +3315,8 @@
             "c7246fb5185539f5",
             "71a1b5e5169315bc",
             "002c957d2d5e7fe5",
-            "f65c359135a35be8"
+            "f65c359135a35be8",
+            "ffd0325628f7d671"
         ],
         "x": 495,
         "y": 200,
@@ -4154,7 +4161,7 @@
         "z": "4bc72a1112cb448c",
         "g": "fc6029b7d49d1e93",
         "name": "data",
-        "func": "/*\nMain admin account 'admin', set at every start.\nPassword from environment DKNR_ADMIN_PASSWORD, or DKNR_PASSWORD, never from the interface.\nWithout msg.keep (no users file, raz auth), other accounts are removed.\n*/\nconst pass = env.get('DKNR_ADMIN_PASSWORD') || env.get('DKNR_PASSWORD') || 'admin';\nif (pass === 'admin') {\n    node.warn('Dashboard admin password is \"admin\", set DKNR_ADMIN_PASSWORD or DKNR_PASSWORD');\n}\n\nconst admin = msg.keep === true ? (global.get('auth.admin') || {}) : {}; // read\n\nmsg.payload = {\n    'admin': {\n        'pass': pass,\n        'level': 'admin',\n        'lang': typeof admin.lang === 'string' ? admin.lang : 'fr',\n        'telegram': typeof admin.telegram === 'string' ? admin.telegram : ''\n    }\n};\n// Keep MCP key (see mcp tab)\nif (typeof admin.mcp === 'object' && admin.mcp !== null) {\n    msg.payload.admin.mcp = admin.mcp;\n}\n\nreturn msg;\n",
+        "func": "/*\nMain admin account 'admin', set at every start.\nPassword from environment DKNR_ADMIN_PASSWORD, or DKNR_PASSWORD, never from the interface.\nTelegram chat number from DKNR_TELEGRAM_ID (kept when empty).\nWithout msg.keep (no users file, raz auth), other accounts are removed.\n*/\nconst pass = env.get('DKNR_ADMIN_PASSWORD') || env.get('DKNR_PASSWORD') || 'admin';\nif (pass === 'admin') {\n    node.warn('Dashboard admin password is \"admin\", set DKNR_ADMIN_PASSWORD or DKNR_PASSWORD');\n}\n\nconst admin = msg.keep === true ? (global.get('auth.admin') || {}) : {}; // read\n\nmsg.payload = {\n    'admin': {\n        'pass': pass,\n        'level': 'admin',\n        'lang': typeof admin.lang === 'string' ? admin.lang : 'fr',\n        // Telegram chat number from DKNR_TELEGRAM_ID, else kept\n        'telegram': (env.get('DKNR_TELEGRAM_ID') || '').trim() || (typeof admin.telegram === 'string' ? admin.telegram : '')\n    }\n};\n// Keep MCP key (see mcp tab)\nif (typeof admin.mcp === 'object' && admin.mcp !== null) {\n    msg.payload.admin.mcp = admin.mcp;\n}\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -9638,58 +9645,14 @@
         "z": "77269fd32cdb1638",
         "g": "5db9bfd12c441ded",
         "name": "data",
-        "func": "// Energy summary of yesterday and today: meters spread and power integrals\n\nconst entity = { ...(global.get('entity') || { }) };\nconst energy = { ...(global.get('energy') || { }) };\n\nconst visible = (uid) => uid !== '' && typeof entity[uid] === 'object' && entity[uid]['hidden'] === 0;\n\n// Meters are indexes: daily energy is the spread (max - min) of each day\nmsg.meters = {};\nfor (const e of [ 'favorable_energy_meter', 'unfavorable_energy_meter' ]) {\n    const uid = energy[e] || '';\n    if (visible(uid)) {\n        msg.meters[uid] = { 'key': e, 'unit': entity[uid]['unit'] };\n    }\n}\n\n// Powers are integrated to get energy\nmsg.powers = {};\nif (visible('dknr/sensor/home_power')) {\n    msg.powers['dknr/sensor/home_power'] = { 'key': 'home_power', 'unit': entity['dknr/sensor/home_power']['unit'] || 'W' };\n}\nfor (const e of [ 'grid_power', 'solar_power', 'battery_power' ]) {\n    const uid = energy[e] || '';\n    if (visible(uid)) {\n        msg.powers[uid] = { 'key': e, 'unit': entity[uid]['unit'] || 'W' };\n    }\n}\n\nconst meters = Object.keys(msg.meters);\nconst powers = Object.keys(msg.powers);\nif (meters.length === 0 && powers.length === 0) {\n    node.status({ 'fill': 'red', 'text': 'no energy entity' });\n\n    // Clear summary\n    node.send([null, { 'topic': msg.topic, 'payload': [], 'meters': {}, 'powers': {}, 'dictionary': msg.dictionary }]);\n\n    return;\n}\n\n// Days follow local time\nlet tz = env.get('TZ') || '';\nif (!/^[A-Za-z_]+\\/[A-Za-z_\\/]+$/.test(tz)) {\n    tz = 'Europe/Paris';\n}\n\n// Yesterday midnight (local time of the server)\nlet start = new Date();\nstart.setHours(0, 0, 0, 0);\nstart.setDate(start.getDate() - 1);\nmsg.start = start.getTime();\n\nconst filter = (uids) => '|> filter(fn: (r) => ' + uids.map(u => 'r[\"_field\"] == \"' + u + '\"').join(' or ') + ')';\n\nmsg.query =\n'import \"timezone\"\\n' +\n'option location = timezone.location(name: \"' + tz + '\")\\n';\n\nif (meters.length > 0) {\n    msg.query +=\n    'from(bucket: \"domotic\")' +\n    '|> range(start: ' + new Date(msg.start).toISOString() + ', stop: now())' +\n    '|> filter(fn: (r) => r[\"_measurement\"] == \"energy\")' +\n    filter(meters) +\n    '|> toFloat()' +\n    '|> aggregateWindow(every: 1d, fn: spread, createEmpty: false, timeSrc: \"_start\")' +\n    '|> yield(name: \"meter\")\\n';\n}\n\n// One hour before yesterday midnight to get the power at midnight\nif (powers.length > 0) {\n    msg.query +=\n    'from(bucket: \"domotic\")' +\n    '|> range(start: ' + new Date(msg.start - 3600000).toISOString() + ', stop: now())' +\n    filter(powers) +\n    '|> toFloat()' +\n    '|> aggregateWindow(every: 1m, fn: mean, createEmpty: false, timeSrc: \"_start\")' +\n    '|> yield(name: \"power\")\\n';\n}\n\nnode.status({ 'text': meters.length + ' meter(s), ' + powers.length + ' power(s)' });\n\nreturn [msg, null];\n",
-        "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 430,
-        "y": 1320,
-        "wires": [
-            [
-                "5548b0e73792b395"
-            ],
-            [
-                "fc655f1b25e01fb5"
-            ]
-        ]
-    },
-    {
-        "id": "5548b0e73792b395",
-        "type": "influxdb in",
-        "z": "77269fd32cdb1638",
-        "g": "5db9bfd12c441ded",
-        "influxdb": "cf56c7fff4df45c2",
-        "name": "db",
-        "query": "",
-        "rawOutput": false,
-        "precision": "",
-        "retentionPolicy": "",
-        "org": "dknr",
-        "x": 590,
-        "y": 1320,
-        "wires": [
-            [
-                "77b84039cfe9c26b"
-            ]
-        ]
-    },
-    {
-        "id": "77b84039cfe9c26b",
-        "type": "function",
-        "z": "77269fd32cdb1638",
-        "g": "5db9bfd12c441ded",
-        "name": "data",
-        "func": "// Summary data: energy of yesterday and today by type, and self-sufficiency\n// Powers sign: grid > 0 import, solar > 0 production, battery > 0 discharge / < 0 charge\n\nconst dict = msg.dictionary.energy || {};\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nconst meters = msg.meters || {};\nconst powers = msg.powers || {};\n\n// Day boundaries: yesterday, today, now\nconst d0 = msg.start;\nlet d1 = new Date(d0);\nd1.setDate(d1.getDate() + 1);\nd1 = d1.getTime();\nconst d2 = Date.now();\nconst day = (ts) => ts >= d1 ? 1 : (ts >= d0 ? 0 : -1);\n\n// Energy in kWh, [yesterday, today]\nlet sums = {};\nconst add = (key, i, value) => {\n    if (typeof sums[key] !== 'object') {\n        sums[key] = [0, 0];\n    }\n    if (i >= 0) {\n        sums[key][i] += value;\n    }\n};\nconst factor = { 'mW': 0.001, 'W': 1, 'kW': 1000, 'MW': 1000000, 'mWh': 0.001, 'Wh': 1, 'kWh': 1000, 'MWh': 1000000 };\n\n// Meters: one spread per day\nfor (const r of rows) {\n    const m = meters[r['_field']];\n    const ts = new Date(r['_time']).getTime();\n    const value = Number(r['_value']);\n    if (typeof m !== 'object' || isNaN(ts) || isNaN(value)) {\n\n        continue;\n    }\n    // Window start is local midnight, allow one hour for daylight saving time changes\n    add(m['key'], day(ts + 3600000), value * (factor[m['unit']] || 1) / 1000);\n}\n\n// Powers: each value is held until the next one (one hour at most), split by day\nlet points = {};\nfor (const r of rows) {\n    const p = powers[r['_field']];\n    const ts = new Date(r['_time']).getTime();\n    const value = Number(r['_value']);\n    if (typeof p !== 'object' || isNaN(ts) || isNaN(value)) {\n\n        continue;\n    }\n    if (!Array.isArray(points[r['_field']])) {\n        points[r['_field']] = [];\n    }\n    points[r['_field']].push([ts, value * (factor[p['unit']] || 1)]);\n}\nfor (const uid in points) {\n    const key = powers[uid]['key'];\n    const pts = points[uid].sort((a, b) => a[0] - b[0]);\n    for (let i = 0; i < pts.length; i++) {\n        const from = pts[i][0];\n        const to = Math.min(i + 1 < pts.length ? pts[i + 1][0] : d2, from + 3600000, d2);\n        const w = pts[i][1];\n        // Cut the interval at day boundaries\n        for (const [a, b] of [[Math.max(from, d0), Math.min(to, d1)], [Math.max(from, d1), Math.min(to, d2)]]) {\n            if (b <= a) {\n\n                continue;\n            }\n            const kwh = w * (b - a) / 3600000 / 1000;\n            const k = a >= d1 ? 1 : 0;\n            if (key === 'battery_power') {\n                add('battery_discharge', k, Math.max(kwh, 0));\n                add('battery_charge', k, Math.max(-kwh, 0));\n            }\n            else {\n                add(key, k, Math.max(kwh, 0));\n            }\n        }\n    }\n}\n\nconst round = (v) => Math.round(v * 100) / 100;\nconst lines = [\n    ['favorable_energy_meter', dict.favorable || 'Favorable tariff', '#2ca02c'],\n    ['unfavorable_energy_meter', dict.unfavorable || 'Unfavorable tariff', '#e34948'],\n    ['home_power', dict.home_energy || 'Home total', '#2a78d6'],\n    ['solar_power', dict.solar_energy || 'Solar production', '#eda100'],\n    ['battery_charge', dict.battery_charge || 'Battery charge', '#2ca02c'],\n    ['battery_discharge', dict.battery_discharge || 'Battery discharge', '#98d98e']\n];\nlet res = [];\nfor (const [key, label, color] of lines) {\n    if (typeof sums[key] === 'object') {\n        res.push({ 'key': key, 'label': label, 'color': color, 'values': sums[key].map(round) });\n    }\n}\n\n// Self-sufficiency: part of the home consumption not taken from the grid\nlet ratio = [null, null];\nif (typeof sums['home_power'] === 'object' && typeof sums['grid_power'] === 'object') {\n    for (const i of [0, 1]) {\n        const home = sums['home_power'][i];\n        if (home > 0) {\n            ratio[i] = Math.round(Math.max(0, Math.min(1, 1 - sums['grid_power'][i] / home)) * 100);\n        }\n    }\n}\n\nnode.status({ 'text': res.length + ' lines, ' + ratio.map(r => r === null ? '-' : r + '%').join(' / ') });\n\ndelete msg.meters;\ndelete msg.powers;\ndelete msg.query;\ndelete msg.start;\nmsg.payload = {\n    'unit': 'kWh',\n    'locale': (msg.dictionary.common || {}).locales || 'fr',\n    'columns': [dict.yesterday || 'Yesterday', dict.today || 'Today'],\n    'empty': dict.summary_empty || 'No energy data',\n    'ratio_label': dict.selfsufficiency || 'Self-sufficiency',\n    'lines': res,\n    'ratio': ratio\n};\n\nreturn msg;\n",
+        "func": "// Energy of yesterday and today (see common - energy - day)\nmsg = await node.linkcall('common - energy - day', msg, { 'timeout': 30000 });\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 750,
+        "x": 430,
         "y": 1320,
         "wires": [
             [
@@ -22150,7 +22113,7 @@
         "z": "83a4a39c71373520",
         "g": "c3c399344c344dee",
         "name": "rpc",
-        "func": "/*\nMCP server (JSON-RPC 2.0 over HTTP, see docs/CONCEPTION.md \"Serveur MCP\").\nRead only tools. Key from header x-api-key or Authorization: Bearer,\nuser level read from auth at each request, tools checked by common - user - access.\n*/\n\nconst PROTOCOLS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];\nconst MAX_ENTITIES = 500;\nconst DEFAULT_ENTITIES = 100;\nconst MAX_HOURS = 168;\nconst MAX_POINTS = 300;\nconst MAX_RAW = 500;\nconst CALL_TIMEOUT = 20000;\nconst LOW_BATTERY = 15; // %\n// Never sent: home location\nconst PRIVATE = ['dknr/command/latitude', 'dknr/command/longitude'];\n\nconst reply = (status, body) => {\n    msg.statusCode = status;\n    msg.payload = body === null ? '' : JSON.stringify(body);\n    msg.headers = {\n        'Content-Type': 'application/json; charset=utf-8',\n        'Cache-Control': 'no-store'\n    };\n    delete msg.cookies;\n\n    return msg;\n};\nconst rpcError = (id, code, message) => ({ 'jsonrpc': '2.0', 'id': id ?? null, 'error': { 'code': code, 'message': message } });\n\n// --- Authentication ---\n\nconst headers = (msg.req && msg.req.headers) || {};\nlet key = typeof headers['x-api-key'] === 'string' ? headers['x-api-key'].trim() : '';\nif (key === '' && typeof headers['authorization'] === 'string') {\n    const m = headers['authorization'].match(/^Bearer\\s+(\\S+)$/i);\n    key = m ? m[1] : '';\n}\n\nlet login = '';\nif (/^dknr_[A-Za-z0-9_-]{20,100}$/.test(key)) {\n    const hash = crypto.createHash('sha256').update(key).digest();\n    const auth = global.get('auth') || {}; // read\n    for (const l in auth) {\n        const h = ((auth[l] || {}).mcp || {}).hash;\n        if (typeof h === 'string' && h.length === 64) {\n            const b = Buffer.from(h, 'hex');\n            if (b.length === hash.length && crypto.timingSafeEqual(b, hash)) {\n                login = l;\n            }\n        }\n    }\n}\n\nif (login === '') {\n    node.status({ 'fill': 'red', 'text': 'unauthorized' });\n\n    return reply(401, rpcError(null, -32001, 'Unauthorized: missing or invalid key'));\n}\n\nconst account = global.get('auth[\"' + login + '\"]') || {};\nconst hmi = { ...(global.get('describe.template.hmi') || {}), 'login': login, 'level': account.level || '', 'lang': account.lang || 'fr' };\n\n// --- Helpers ---\n\nconst call = async (name, m) => {\n    let timer;\n    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(name + ' timeout')), CALL_TIMEOUT); });\n    try {\n        return await Promise.race([node.linkcall(name, m), timeout]);\n    } finally {\n        clearTimeout(timer);\n    }\n};\n\nconst accessCache = {};\nconst can = async (keys) => {\n    const k = Array.isArray(keys) ? keys.join(',') : keys;\n    if (typeof accessCache[k] !== 'boolean') {\n        const r = await call('common - user - access', { 'hmi': { ...hmi }, 'access': keys });\n        accessCache[k] = r.allowed === true;\n    }\n\n    return accessCache[k];\n};\n\nclass ToolError extends Error {}\nconst need = async (keys) => {\n    if (!(await can(keys))) {\n        throw new ToolError('Access denied for user level \"' + (hmi.level || '-') + '\" (' + (Array.isArray(keys) ? keys.join(', ') : keys) + ')');\n    }\n};\n\nconst iso = (ts) => (typeof ts === 'number' && ts > 0) ? new Date(ts).toISOString() : null;\nconst str = (v) => typeof v === 'string' ? v : '';\n\nconst entities = () => global.get('entity') || {};\nconst parents = () => global.get('parent') || {};\nconst rooms = () => ((global.get('room') || {}).base) || {};\nconst blocks = () => global.get('block') || {};\n\n// Same rule as room page: 1h for a non zero power (not a command), else 48h\nconst silent = (e) => (e['seen'] + ((e['element'] === 'power' && e['group'] !== 'command' && Number(e['value']) ? 1 : 48) * 3600000)) < Date.now();\n\nconst entityName = (e) => {\n    let name = str(e['name']);\n    if (name === '' || name === e['id']) {\n        const p = parents()[e['parent']];\n        name = (p && str(p['name'])) || str(e['parent']) || str(e['id']);\n        if (str(e['id']) !== '' && name !== e['id']) {\n            name += ' (' + e['id'] + ')';\n        }\n    }\n\n    return name;\n};\n\nconst brief = (uid, e) => ({\n    'uid': uid,\n    'name': entityName(e),\n    'room': str(e['room']),\n    'element': str(e['element']),\n    'group': str(e['group']),\n    'value': e['value'],\n    'unit': str(e['unit']),\n    'seen': iso(e['seen']),\n    'silent': typeof e['seen'] === 'number' ? silent(e) : true,\n    'hidden': e['hidden'] !== 0\n});\n\n// Visible for the user: not hidden and not blocked, else entity.view needed\nconst visible = async (uid, e, withHidden) => {\n    if (typeof e !== 'object' || e === null) {\n\n        return false;\n    }\n    if (e['hidden'] === 0 && blocks()[uid] !== true) {\n\n        return true;\n    }\n\n    return withHidden === true && await can('entity.view');\n};\n\nconst getEntity = async (uid) => {\n    const e = entities()[uid];\n    if (typeof uid !== 'string' || typeof e !== 'object' || !(await visible(uid, e, true))) {\n        throw new ToolError('Unknown entity: ' + uid);\n    }\n\n    return e;\n};\n\n// --- Tools ---\n\nconst tools = {};\n\ntools.get_house = {\n    'description': 'Overview of the DKNR Domotic installation: version, counts, and the internal \"dknr\" source (house modes dknr/command/* and sensors dknr/sensor/*: day/night, lights, shutters, water boiler, sound, temperature mode, sun...).',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const app = global.get('describe.app') || {};\n        const all = entities();\n        let modes = {}, visibleCount = 0, hiddenCount = 0;\n        for (const uid in all) {\n            const e = all[uid];\n            if (e['hidden'] === 0) { visibleCount++; } else { hiddenCount++; }\n            if ((uid.startsWith('dknr/command/') || uid.startsWith('dknr/sensor/')) && !PRIVATE.includes(uid)) {\n                modes[uid] = { 'value': e['value'], 'unit': str(e['unit']), 'seen': iso(e['seen']) };\n            }\n        }\n\n        return {\n            'application': { 'title': str(app.title) || 'DKNR Domotic', 'version': str(app.version) },\n            'user': { 'login': login, 'level': hmi.level },\n            'now': new Date().toISOString(),\n            'counts': {\n                'rooms': Object.keys(rooms()).length,\n                'sources': Object.keys(global.get('source') || {}).length,\n                'parents': Object.keys(parents()).length,\n                'entities_visible': visibleCount,\n                'entities_hidden': hiddenCount,\n                'scenes': Object.keys(global.get('scene') || {}).length\n            },\n            'dknr': modes,\n            'notes': 'Binary values are 1 / 0 (unit \"rb\" reverts the meaning). Apertures: 1 = opened. Enum values are option keys. Mode commands: auto, high, low, manual.'\n        };\n    }\n};\n\ntools.list_rooms = {\n    'description': 'List rooms: id, name, outdoor flag and number of visible entities.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const all = entities();\n        let count = {};\n        for (const uid in all) {\n            if (all[uid]['hidden'] === 0 && blocks()[uid] !== true) {\n                count[all[uid]['room']] = (count[all[uid]['room']] || 0) + 1;\n            }\n        }\n        const base = rooms();\n\n        return Object.keys(base).map(id => ({\n            'id': id,\n            'name': str(base[id]['name']),\n            'outdoor': Number(base[id]['outdoor']) === 1 || base[id]['outdoor'] === true,\n            'entities': count[id] || 0\n        }));\n    }\n};\n\ntools.list_sources = {\n    'description': 'List DKNR sources (dknr-zigbee, dknr-zwave, dknr-teleinfo...): discovery info, last announced start, number of devices (parents) and entities.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const sources = global.get('source') || {};\n        const boot = global.get('sourceboot') || {};\n        const all = entities();\n        let stats = {};\n        for (const uid in all) {\n            const s = all[uid]['source'] || uid.split('/')[0];\n            stats[s] = stats[s] || { 'entities': 0, 'parents': new Set(), 'silent': 0 };\n            stats[s].entities++;\n            stats[s].parents.add(all[uid]['parent']);\n            if (all[uid]['hidden'] === 0 && silent(all[uid])) {\n                stats[s].silent++;\n            }\n        }\n        const names = new Set([...Object.keys(sources), ...Object.keys(stats)]);\n\n        return [...names].sort().map(s => ({\n            'source': s,\n            'title': str((sources[s] || {}).title),\n            'version': str((sources[s] || {}).version),\n            'git': str((sources[s] || {}).git),\n            'started': iso(boot[s]),\n            'parents': stats[s] ? stats[s].parents.size : 0,\n            'entities': stats[s] ? stats[s].entities : 0,\n            'silent_visible_entities': stats[s] ? stats[s].silent : 0\n        }));\n    }\n};\n\ntools.list_entities = {\n    'description': 'List entities (uid = source/parent/id) with name, room, element, value, unit, last seen and silent flag. Filters are combined. Hidden or blocked entities need include_hidden (admin level).',\n    'inputSchema': {\n        'type': 'object',\n        'properties': {\n            'room': { 'type': 'string', 'description': 'Room id' },\n            'source': { 'type': 'string', 'description': 'Source name (first part of uid)' },\n            'element': { 'type': 'string', 'description': 'Element: light, shutter, temperature, power, door, window, motion...' },\n            'search': { 'type': 'string', 'description': 'Text searched in uid and name (case insensitive)' },\n            'include_hidden': { 'type': 'boolean', 'description': 'Include hidden and blocked entities (admin)' },\n            'limit': { 'type': 'integer', 'minimum': 1, 'maximum': MAX_ENTITIES, 'description': 'Default ' + DEFAULT_ENTITIES }\n        }\n    },\n    'run': async (a) => {\n        await need('room.view');\n        const withHidden = a.include_hidden === true;\n        if (withHidden) {\n            await need('entity.view');\n        }\n        const limit = Math.min(Math.max(parseInt(a.limit) || DEFAULT_ENTITIES, 1), MAX_ENTITIES);\n        const search = str(a.search).toLowerCase();\n        const all = entities();\n        let res = [], total = 0;\n        for (const uid of Object.keys(all).sort()) {\n            const e = all[uid];\n            if (!(await visible(uid, e, withHidden))) { continue; }\n            if (str(a.room) !== '' && e['room'] !== a.room) { continue; }\n            if (str(a.source) !== '' && uid.split('/')[0] !== a.source) { continue; }\n            if (str(a.element) !== '' && e['element'] !== a.element) { continue; }\n            const b = brief(uid, e);\n            if (search !== '' && !(uid.toLowerCase().includes(search) || b.name.toLowerCase().includes(search))) { continue; }\n            total++;\n            if (res.length < limit) {\n                if (blocks()[uid] === true) { b.blocked = true; }\n                res.push(b);\n            }\n        }\n\n        return { 'total': total, 'returned': res.length, 'entities': res };\n    }\n};\n\ntools.get_entity = {\n    'description': 'Full detail of one entity: stored entity, last discovery, options, device, and the scenes it targets or triggers.',\n    'inputSchema': {\n        'type': 'object',\n        'properties': { 'uid': { 'type': 'string', 'description': 'Entity uid: source/parent/id' } },\n        'required': ['uid']\n    },\n    'run': async (a) => {\n        await need('room.view');\n        const e = await getEntity(a.uid);\n        const scenes = global.get('scene') || {};\n        let targetOf = typeof scenes[a.uid] === 'object' ? a.uid : null;\n        let triggers = [];\n        for (const t in scenes) {\n            if (typeof (scenes[t] || {}).trigger === 'object' && typeof scenes[t].trigger[a.uid] === 'object') {\n                triggers.push({ 'target': t, 'enabled': scenes[t]['enabled'] === 1, 'trigger': scenes[t].trigger[a.uid] });\n            }\n        }\n        const p = parents()[e['parent']];\n        const room = rooms()[e['room']];\n\n        return {\n            ...brief(a.uid, e),\n            'entity': e,\n            'discovery': (global.get('discovery') || {})[a.uid] || null,\n            'device': p ? { 'id': p['id'], 'name': p['name'], 'seen': iso(p['seen']) } : null,\n            'room_name': room ? room['name'] : null,\n            'scene_target': targetOf !== null && await can('scene.view') ? targetOf : null,\n            'scene_triggers': await can('scene.view') ? triggers : '(scene.view needed)'\n        };\n    }\n};\n\ntools.get_history = {\n    'description': 'History of one entity from InfluxDB (only visible entities with an element are recorded, on value change). Numbers are averaged per window, other values keep the last value per window.',\n    'inputSchema': {\n        'type': 'object',\n        'properties': {\n            'uid': { 'type': 'string', 'description': 'Entity uid: source/parent/id' },\n            'hours': { 'type': 'integer', 'minimum': 1, 'maximum': MAX_HOURS, 'description': 'Period in hours, default 24' },\n            'raw': { 'type': 'boolean', 'description': 'Every recorded change, no aggregation (last ' + MAX_RAW + ' at most), ex. to follow a shutter position' }\n        },\n        'required': ['uid']\n    },\n    'run': async (a) => {\n        await need('room.view');\n        const e = await getEntity(a.uid);\n        if (!/^[A-Za-z0-9_\\-./]+$/.test(a.uid)) {\n            throw new ToolError('Invalid uid');\n        }\n        const hours = Math.min(Math.max(parseInt(a.hours) || 24, 1), MAX_HOURS);\n        const textuals = global.get('describe.texts') || [];\n        const numeric = !['b', 'rb'].includes(e['unit']) && !textuals.includes(e['unit']);\n        const raw = a.raw === true;\n        const every = Math.max(1, Math.ceil(hours * 60 / MAX_POINTS));\n\n        const q = {\n            'query':\n                'from(bucket: \"domotic\")' +\n                '|> range(start: -' + hours + 'h, stop: now())' +\n                '|> filter(fn: (r) => r[\"_field\"] == \"' + a.uid + '\")' +\n                (raw ? '|> tail(n: ' + MAX_RAW + ')' : (numeric ? '|> toFloat()|> aggregateWindow(every: ' + every + 'm, fn: mean, createEmpty: false)' : '|> aggregateWindow(every: ' + every + 'm, fn: last, createEmpty: false)')) +\n                '|> yield(name: \"history\")',\n            'payload': ''\n        };\n        const r = await call('mcp - influxdb', q);\n        if (r.error) {\n            throw new ToolError('InfluxDB: ' + (r.error.message || r.error));\n        }\n        const rows = (Array.isArray(r.payload) ? r.payload : [])\n            .map(x => [new Date(x._time).getTime(), x._value])\n            .filter(x => !isNaN(x[0]) && x[1] !== null && x[1] !== undefined)\n            .sort((x, y) => x[0] - y[0])\n            .map(x => ({ 't': new Date(x[0]).toISOString(), 'v': numeric && !raw ? Math.round(Number(x[1]) * 100) / 100 : x[1] }));\n\n        return {\n            'uid': a.uid,\n            'name': entityName(e),\n            'unit': str(e['unit']),\n            'current': e['value'],\n            'hours': hours,\n            'window_minutes': raw ? 0 : every,\n            'aggregation': raw ? 'none' : (numeric ? 'mean' : 'last'),\n            'points': rows\n        };\n    }\n};\n\ntools.list_problems = {\n    'description': 'Things to check: silent visible entities (no news for 48h, 1h for a non zero power; remotes excluded, they only publish when pressed), low batteries, active alerts (element alert at 1) and scene anomalies (routine stopped on \"not found\", \"error\" or \"invalid\", scene without trigger). Normal stops (value unchanged, input between low and high levels, no output for this input, no dknr mode for the element, thermostat reached, scene disabled) are not listed: use get_scene for them.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const all = entities();\n        let silentList = [], batteries = [], alerts = [];\n        // Home energy storage is not a battery to change: skip the source of the Energy page battery\n        const storage = str((global.get('energy') || {})['battery_level']).split('/')[0];\n        for (const uid of Object.keys(all).sort()) {\n            const e = all[uid];\n            if (e['hidden'] !== 0 || blocks()[uid] === true) { continue; }\n            if (e['element'] !== 'remote' && silent(e)) { silentList.push(brief(uid, e)); }\n            if (e['element'] === 'battery' && e['unit'] === '%' && (storage === '' || uid.split('/')[0] !== storage) && e['value'] !== '' && Number(e['value']) <= LOW_BATTERY) { batteries.push(brief(uid, e)); }\n            if (e['element'] === 'alert' && Number(e['value']) === 1) { alerts.push(brief(uid, e)); }\n        }\n        let anomalies = '(scene.view needed)';\n        if (await can('scene.view')) {\n            anomalies = [];\n            const scenes = global.get('scene') || {};\n            for (const t of Object.keys(scenes).sort()) {\n                const s = await call('common - scene - summary', { 'payload': t });\n                const sum = typeof s.payload === 'object' ? s.payload : {};\n                // Routine results only (not the trigger, target, data, response lines)\n                let reasons = {};\n                for (const k in sum) {\n                    if (!['trigger', 'target', 'thdata', 'rsp', 'ts', 'level', 'manual'].includes(k) && typeof sum[k] === 'string' && /not found|error|invalid/i.test(sum[k])) {\n                        reasons[k] = sum[k];\n                    }\n                }\n                if (Object.keys(reasons).length > 0) {\n                    anomalies.push({ 'target': t, 'target_name': all[t] ? entityName(all[t]) : null, 'trigger': str(sum.trigger), 'at': iso(sum.ts), 'last_success': iso(s.routine), 'reasons': reasons });\n                }\n                if (Object.keys((scenes[t] || {}).trigger || {}).length === 0) {\n                    anomalies.push({ 'target': t, 'target_name': all[t] ? entityName(all[t]) : null, 'reasons': { 'trigger': 'scene without trigger' } });\n                }\n            }\n        }\n\n        return { 'silent': silentList, 'low_batteries': batteries, 'alerts': alerts, 'scene_anomalies': anomalies };\n    }\n};\n\nconst ROUTINES = ['motion', 'aperture', 'nocturnal', 'diurnal', 'confort', 'eco', 'nightlight', 'retention', 'illuminance', 'darkness', 'humidity', 'daily', 'openwork', 'tariff', 'power'];\n\ntools.list_scenes = {\n    'description': 'List scenes. A scene drives one target entity (scene key = target uid) from trigger entities, through routines.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('scene.view');\n        const scenes = global.get('scene') || {};\n        const all = entities();\n        const fields = global.get('describe.scenes') || {}; // scene fields by target element\n        let res = [];\n        for (const t of Object.keys(scenes).sort()) {\n            const s = scenes[t] || {};\n            const sum = await call('common - scene - summary', { 'payload': t });\n            const allowed = all[t] ? fields[all[t]['element']] : undefined;\n            const has = r => !Array.isArray(allowed) || allowed.includes(r);\n            let routines = ROUTINES.filter(r => Number(s[r]) > 0 && has(r));\n            // Duration is active as soon as it is set, for elements that use it\n            const duration = Array.isArray(allowed) && allowed.includes('duration') ? (Number(s['duration']) || 0) : 0;\n            if (duration > 0) {\n                routines.push('duration');\n            }\n            res.push({\n                'target': t,\n                'target_name': all[t] ? entityName(all[t]) : null,\n                'element': all[t] ? str(all[t]['element']) : null,\n                'enabled': s['enabled'] === 1,\n                'routines': routines,\n                'duration_minutes': duration,\n                'triggers': Object.keys(s.trigger || {}).length,\n                'last_failure': typeof sum.payload === 'object' && sum.payload.ts ? iso(sum.payload.ts) : null,\n                'last_success': iso(sum.routine)\n            });\n        }\n\n        return res;\n    }\n};\n\ntools.get_scene = {\n    'description': 'Full scene of a target entity: settings, triggers with names and current values, last failure summary (each routine result, first diagnostic tool) and last successful order.',\n    'inputSchema': {\n        'type': 'object',\n        'properties': { 'target': { 'type': 'string', 'description': 'Target entity uid (scene key)' } },\n        'required': ['target']\n    },\n    'run': async (a) => {\n        await need('scene.view');\n        const scenes = global.get('scene') || {};\n        const s = scenes[a.target];\n        if (typeof a.target !== 'string' || typeof s !== 'object') {\n            throw new ToolError('Unknown scene: ' + a.target);\n        }\n        const all = entities();\n        let triggers = [];\n        for (const uid in (s.trigger || {})) {\n            triggers.push({\n                ...(all[uid] ? brief(uid, all[uid]) : { 'uid': uid, 'missing': true }),\n                'settings': s.trigger[uid]\n            });\n        }\n        const sum = await call('common - scene - summary', { 'payload': a.target });\n        const settings = { ...s };\n        delete settings.trigger;\n\n        return {\n            'target': all[a.target] ? brief(a.target, all[a.target]) : { 'uid': a.target, 'missing': true },\n            'settings': settings,\n            'triggers': triggers,\n            'last_failure': typeof sum.payload === 'object' && Object.keys(sum.payload).length > 0 ? { 'at': iso(sum.payload.ts), 'summary': sum.payload } : null,\n            'last_success': iso(sum.routine),\n            'notes': 'Trigger settings: inputhigh / inputlow values, outputhigh / outputlow among none, high, low, toggle. Failure summary lists each routine result in chain order.'\n        };\n    }\n};\n\n// --- JSON-RPC ---\n\nconst handle = async (req) => {\n    if (typeof req !== 'object' || req === null || req.jsonrpc !== '2.0' || typeof req.method !== 'string') {\n\n        return rpcError(req && req.id, -32600, 'Invalid Request');\n    }\n    const id = req.id;\n    const isNotification = id === undefined;\n    const params = typeof req.params === 'object' && req.params !== null ? req.params : {};\n    let result;\n\n    switch (req.method) {\n        case 'initialize': {\n            const app = global.get('describe.app') || {};\n            const asked = str(params.protocolVersion);\n            result = {\n                'protocolVersion': PROTOCOLS.includes(asked) ? asked : PROTOCOLS[0],\n                'capabilities': { 'tools': { 'listChanged': false } },\n                'serverInfo': { 'name': 'dknr-domotic', 'title': str(app.title) || 'DKNR Domotic', 'version': str(app.version) || '0' },\n                'instructions': 'DKNR Domotic home automation, read only. Entities are identified by uid source/parent/id. Start with get_house, list_rooms or list_problems; use get_scene to understand why a scene did or did not act.'\n            };\n            break;\n        }\n        case 'ping':\n            result = {};\n            break;\n        case 'tools/list':\n            result = { 'tools': Object.keys(tools).map(n => ({ 'name': n, 'description': tools[n].description, 'inputSchema': tools[n].inputSchema, 'annotations': { 'readOnlyHint': true } })) };\n            break;\n        case 'tools/call': {\n            const tool = tools[str(params.name)];\n            if (!tool) {\n\n                return rpcError(id, -32602, 'Unknown tool: ' + params.name);\n            }\n            try {\n                const data = await tool.run(typeof params.arguments === 'object' && params.arguments !== null ? params.arguments : {});\n                result = { 'content': [{ 'type': 'text', 'text': JSON.stringify(data) }], 'isError': false };\n            } catch (err) {\n                if (!(err instanceof ToolError)) {\n                    node.warn('mcp ' + params.name + ': ' + err.message);\n                }\n                result = { 'content': [{ 'type': 'text', 'text': err.message }], 'isError': true };\n            }\n            break;\n        }\n        default:\n            if (isNotification) {\n\n                return null;\n            }\n\n            return rpcError(id, -32601, 'Method not found: ' + req.method);\n    }\n\n    return isNotification ? null : { 'jsonrpc': '2.0', 'id': id, 'result': result };\n};\n\nlet body = msg.payload;\nif (typeof body === 'string' || Buffer.isBuffer(body)) {\n    try {\n        body = JSON.parse(body.toString());\n    } catch (err) {\n\n        return reply(400, rpcError(null, -32700, 'Parse error'));\n    }\n}\n\nnode.status({ 'fill': 'green', 'text': login + ' ' + (Array.isArray(body) ? 'batch' : (body && body.method) || '?') });\n\nif (Array.isArray(body)) {\n    if (body.length === 0) {\n\n        return reply(400, rpcError(null, -32600, 'Invalid Request'));\n    }\n    let out = [];\n    for (const r of body) {\n        const x = await handle(r);\n        if (x !== null) {\n            out.push(x);\n        }\n    }\n\n    return out.length === 0 ? reply(202, null) : reply(200, out);\n}\n\nconst res = await handle(body);\n\nreturn res === null ? reply(202, null) : reply(200, res);\n",
+        "func": "/*\nMCP server (JSON-RPC 2.0 over HTTP, see docs/CONCEPTION.md \"Serveur MCP\").\nRead only tools from common - house - tool (shared with Telegram). Key from header x-api-key\nor Authorization: Bearer, user level read from auth at each request, tools checked by common - user - access.\n*/\n\nconst PROTOCOLS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];\n\nconst reply = (status, body) => {\n    msg.statusCode = status;\n    msg.payload = body === null ? '' : JSON.stringify(body);\n    msg.headers = {\n        'Content-Type': 'application/json; charset=utf-8',\n        'Cache-Control': 'no-store'\n    };\n    delete msg.cookies;\n\n    return msg;\n};\nconst rpcError = (id, code, message) => ({ 'jsonrpc': '2.0', 'id': id ?? null, 'error': { 'code': code, 'message': message } });\n\n// --- Authentication ---\n\nconst headers = (msg.req && msg.req.headers) || {};\nlet key = typeof headers['x-api-key'] === 'string' ? headers['x-api-key'].trim() : '';\nif (key === '' && typeof headers['authorization'] === 'string') {\n    const m = headers['authorization'].match(/^Bearer\\s+(\\S+)$/i);\n    key = m ? m[1] : '';\n}\n\nlet login = '';\nif (/^dknr_[A-Za-z0-9_-]{20,100}$/.test(key)) {\n    const hash = crypto.createHash('sha256').update(key).digest();\n    const auth = global.get('auth') || {}; // read\n    for (const l in auth) {\n        const h = ((auth[l] || {}).mcp || {}).hash;\n        if (typeof h === 'string' && h.length === 64) {\n            const b = Buffer.from(h, 'hex');\n            if (b.length === hash.length && crypto.timingSafeEqual(b, hash)) {\n                login = l;\n            }\n        }\n    }\n}\n\nif (login === '') {\n    node.status({ 'fill': 'red', 'text': 'unauthorized' });\n\n    return reply(401, rpcError(null, -32001, 'Unauthorized: missing or invalid key'));\n}\n\nconst account = global.get('auth[\"' + login + '\"]') || {};\nconst hmi = { ...(global.get('describe.template.hmi') || {}), 'login': login, 'level': account.level || '', 'lang': account.lang || 'fr' };\n\n// --- Tools (common - house - tool) ---\n\nconst TOOL_TIMEOUT = 60000;\nconst str = (v) => typeof v === 'string' ? v : '';\nconst house = async (name, args) => node.linkcall('common - house - tool', { 'hmi': hmi, 'tool': name, 'arguments': args }, { 'timeout': TOOL_TIMEOUT });\n\n// --- JSON-RPC ---\n\nconst handle = async (req) => {\n    if (typeof req !== 'object' || req === null || req.jsonrpc !== '2.0' || typeof req.method !== 'string') {\n\n        return rpcError(req && req.id, -32600, 'Invalid Request');\n    }\n    const id = req.id;\n    const isNotification = id === undefined;\n    const params = typeof req.params === 'object' && req.params !== null ? req.params : {};\n    let result;\n\n    switch (req.method) {\n        case 'initialize': {\n            const app = global.get('describe.app') || {};\n            const asked = str(params.protocolVersion);\n            result = {\n                'protocolVersion': PROTOCOLS.includes(asked) ? asked : PROTOCOLS[0],\n                'capabilities': { 'tools': { 'listChanged': false } },\n                'serverInfo': { 'name': 'dknr-domotic', 'title': str(app.title) || 'DKNR Domotic', 'version': str(app.version) || '0' },\n                'instructions': 'DKNR Domotic home automation, read only. Entities are identified by uid source/parent/id. Start with get_house, list_rooms or list_problems; use get_scene to understand why a scene did or did not act.'\n            };\n            break;\n        }\n        case 'ping':\n            result = {};\n            break;\n        case 'tools/list': {\n            const list = await house('', {});\n            result = { 'tools': (Array.isArray(list.payload) ? list.payload : []).map(t => ({ ...t, 'annotations': { 'readOnlyHint': true } })) };\n            break;\n        }\n        case 'tools/call': {\n            if (str(params.name) === '') {\n\n                return rpcError(id, -32602, 'Unknown tool: ' + params.name);\n            }\n            const r = await house(str(params.name), typeof params.arguments === 'object' && params.arguments !== null ? params.arguments : {});\n            if (typeof r.tool_error === 'string' && r.tool_error.startsWith('Unknown tool: ')) {\n\n                return rpcError(id, -32602, r.tool_error);\n            }\n            result = typeof r.tool_error === 'string'\n                ? { 'content': [{ 'type': 'text', 'text': r.tool_error }], 'isError': true }\n                : { 'content': [{ 'type': 'text', 'text': JSON.stringify(r.payload) }], 'isError': false };\n            break;\n        }\n        default:\n            if (isNotification) {\n\n                return null;\n            }\n\n            return rpcError(id, -32601, 'Method not found: ' + req.method);\n    }\n\n    return isNotification ? null : { 'jsonrpc': '2.0', 'id': id, 'result': result };\n};\n\nlet body = msg.payload;\nif (typeof body === 'string' || Buffer.isBuffer(body)) {\n    try {\n        body = JSON.parse(body.toString());\n    } catch (err) {\n\n        return reply(400, rpcError(null, -32700, 'Parse error'));\n    }\n}\n\nnode.status({ 'fill': 'green', 'text': login + ' ' + (Array.isArray(body) ? 'batch' : (body && body.method) || '?') });\n\nif (Array.isArray(body)) {\n    if (body.length === 0) {\n\n        return reply(400, rpcError(null, -32600, 'Invalid Request'));\n    }\n    let out = [];\n    for (const r of body) {\n        const x = await handle(r);\n        if (x !== null) {\n            out.push(x);\n        }\n    }\n\n    return out.length === 0 ? reply(202, null) : reply(200, out);\n}\n\nconst res = await handle(body);\n\nreturn res === null ? reply(202, null) : reply(200, res);\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -22264,10 +22227,10 @@
     {
         "id": "0d3d48da91489a93",
         "type": "group",
-        "z": "83a4a39c71373520",
-        "name": "mcp - influxdb",
+        "z": "4bc72a1112cb448c",
+        "name": "common - house - influxdb",
         "style": {
-            "fill": "#6f2fa0",
+            "fill": "#ff0000",
             "fill-opacity": "0.05",
             "label": true
         },
@@ -22279,19 +22242,19 @@
             "14c31c8ad457d39c"
         ],
         "x": 104,
-        "y": 359,
+        "y": 4179,
         "w": 692,
         "h": 142
     },
     {
         "id": "620c46a40f2dcc4d",
         "type": "link in",
-        "z": "83a4a39c71373520",
+        "z": "4bc72a1112cb448c",
         "g": "0d3d48da91489a93",
-        "name": "mcp - influxdb",
+        "name": "common - house - influxdb",
         "links": [],
         "x": 145,
-        "y": 400,
+        "y": 4220,
         "wires": [
             [
                 "36cb7b111bf053c9"
@@ -22301,7 +22264,7 @@
     {
         "id": "36cb7b111bf053c9",
         "type": "influxdb in",
-        "z": "83a4a39c71373520",
+        "z": "4bc72a1112cb448c",
         "g": "0d3d48da91489a93",
         "influxdb": "cf56c7fff4df45c2",
         "name": "db",
@@ -22311,7 +22274,7 @@
         "retentionPolicy": "",
         "org": "dknr",
         "x": 450,
-        "y": 400,
+        "y": 4220,
         "wires": [
             [
                 "2c989d275bddd54d"
@@ -22321,19 +22284,19 @@
     {
         "id": "2c989d275bddd54d",
         "type": "link out",
-        "z": "83a4a39c71373520",
+        "z": "4bc72a1112cb448c",
         "g": "0d3d48da91489a93",
-        "name": "mcp - influxdb",
+        "name": "common - house - influxdb",
         "mode": "return",
         "links": [],
         "x": 755,
-        "y": 400,
+        "y": 4220,
         "wires": []
     },
     {
         "id": "faa0f45979ff6e93",
         "type": "catch",
-        "z": "83a4a39c71373520",
+        "z": "4bc72a1112cb448c",
         "g": "0d3d48da91489a93",
         "name": "catch db",
         "scope": [
@@ -22341,7 +22304,7 @@
         ],
         "uncaught": false,
         "x": 200,
-        "y": 460,
+        "y": 4280,
         "wires": [
             [
                 "14c31c8ad457d39c"
@@ -22351,10 +22314,10 @@
     {
         "id": "14c31c8ad457d39c",
         "type": "function",
-        "z": "83a4a39c71373520",
+        "z": "4bc72a1112cb448c",
         "g": "0d3d48da91489a93",
         "name": "error",
-        "func": "// Return the error to the caller (see rpc get_history)\nmsg.payload = [];\n\nreturn msg;\n",
+        "func": "// Return the error to the caller (see common - house - tool, telegram - summary)\nmsg.payload = [];\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -22362,11 +22325,806 @@
         "finalize": "",
         "libs": [],
         "x": 450,
-        "y": 460,
+        "y": 4280,
         "wires": [
             [
                 "2c989d275bddd54d"
             ]
         ]
+    },
+    {
+        "id": "c24d52a763ed04f4",
+        "type": "link in",
+        "z": "4bc72a1112cb448c",
+        "g": "a370c14753518df7",
+        "name": "common - house - tool",
+        "links": [],
+        "x": 145,
+        "y": 4100,
+        "wires": [
+            [
+                "148ee4698e99644a"
+            ]
+        ]
+    },
+    {
+        "id": "148ee4698e99644a",
+        "type": "function",
+        "z": "4bc72a1112cb448c",
+        "g": "a370c14753518df7",
+        "name": "tool",
+        "func": "/*\nHouse tools (read only), shared by the MCP server (mcp tab) and Telegram (telegram tab).\nSee docs/CONCEPTION.md \"Serveur MCP\".\nIn:  msg.hmi (login, level, lang), msg.tool (tool name, '' for the tools list), msg.arguments.\nOut: msg.payload (tool result, or tools list [{ name, description, inputSchema }]),\n     msg.tool_error (message, access refused included) and msg.tool_internal (unexpected error).\n*/\n\nconst MAX_ENTITIES = 500;\nconst DEFAULT_ENTITIES = 100;\nconst MAX_HOURS = 168;\nconst MAX_POINTS = 300;\nconst MAX_RAW = 500;\nconst CALL_TIMEOUT = 20000;\nconst LOW_BATTERY = 15; // %\n// Never sent: home location\nconst PRIVATE = ['dknr/command/latitude', 'dknr/command/longitude'];\n\n\n// --- User ---\n\nconst login = (typeof (msg.hmi || {}).login === 'string' ? msg.hmi.login : '');\nconst account = global.get('auth[\"' + login + '\"]') || {};\n// Level always read from the account (a removed account has no level)\nconst hmi = { ...(global.get('describe.template.hmi') || {}), 'login': login, 'level': login !== '' ? (account.level || '') : '', 'lang': account.lang || 'fr' };\n\n// --- Helpers ---\n\nconst call = async (name, m) => {\n    let timer;\n    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(name + ' timeout')), CALL_TIMEOUT); });\n    try {\n        return await Promise.race([node.linkcall(name, m, { 'timeout': CALL_TIMEOUT }), timeout]);\n    } finally {\n        clearTimeout(timer);\n    }\n};\n\nconst accessCache = {};\nconst can = async (keys) => {\n    const k = Array.isArray(keys) ? keys.join(',') : keys;\n    if (typeof accessCache[k] !== 'boolean') {\n        const r = await call('common - user - access', { 'hmi': { ...hmi }, 'access': keys });\n        accessCache[k] = r.allowed === true;\n    }\n\n    return accessCache[k];\n};\n\nclass ToolError extends Error {}\nconst need = async (keys) => {\n    if (!(await can(keys))) {\n        throw new ToolError('Access denied for user level \"' + (hmi.level || '-') + '\" (' + (Array.isArray(keys) ? keys.join(', ') : keys) + ')');\n    }\n};\n\nconst iso = (ts) => (typeof ts === 'number' && ts > 0) ? new Date(ts).toISOString() : null;\nconst str = (v) => typeof v === 'string' ? v : '';\n\nconst entities = () => global.get('entity') || {};\nconst parents = () => global.get('parent') || {};\nconst rooms = () => ((global.get('room') || {}).base) || {};\nconst blocks = () => global.get('block') || {};\n\n// Same rule as room page: 1h for a non zero power (not a command), else 48h\nconst silent = (e) => (e['seen'] + ((e['element'] === 'power' && e['group'] !== 'command' && Number(e['value']) ? 1 : 48) * 3600000)) < Date.now();\n\nconst entityName = (e) => {\n    let name = str(e['name']);\n    if (name === '' || name === e['id']) {\n        const p = parents()[e['parent']];\n        name = (p && str(p['name'])) || str(e['parent']) || str(e['id']);\n        if (str(e['id']) !== '' && name !== e['id']) {\n            name += ' (' + e['id'] + ')';\n        }\n    }\n\n    return name;\n};\n\nconst brief = (uid, e) => ({\n    'uid': uid,\n    'name': entityName(e),\n    'room': str(e['room']),\n    'element': str(e['element']),\n    'group': str(e['group']),\n    'value': e['value'],\n    'unit': str(e['unit']),\n    'seen': iso(e['seen']),\n    'silent': typeof e['seen'] === 'number' ? silent(e) : true,\n    'hidden': e['hidden'] !== 0\n});\n\n// Visible for the user: not hidden and not blocked, else entity.view needed\nconst visible = async (uid, e, withHidden) => {\n    if (typeof e !== 'object' || e === null) {\n\n        return false;\n    }\n    if (e['hidden'] === 0 && blocks()[uid] !== true) {\n\n        return true;\n    }\n\n    return withHidden === true && await can('entity.view');\n};\n\nconst getEntity = async (uid) => {\n    const e = entities()[uid];\n    if (typeof uid !== 'string' || typeof e !== 'object' || !(await visible(uid, e, true))) {\n        throw new ToolError('Unknown entity: ' + uid);\n    }\n\n    return e;\n};\n\n// --- Tools ---\n\nconst tools = {};\n\ntools.get_house = {\n    'description': 'Overview of the DKNR Domotic installation: version, counts, and the internal \"dknr\" source (house modes dknr/command/* and sensors dknr/sensor/*: day/night, lights, shutters, water boiler, sound, temperature mode, sun...).',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const app = global.get('describe.app') || {};\n        const all = entities();\n        let modes = {}, visibleCount = 0, hiddenCount = 0;\n        for (const uid in all) {\n            const e = all[uid];\n            if (e['hidden'] === 0) { visibleCount++; } else { hiddenCount++; }\n            if ((uid.startsWith('dknr/command/') || uid.startsWith('dknr/sensor/')) && !PRIVATE.includes(uid)) {\n                modes[uid] = { 'value': e['value'], 'unit': str(e['unit']), 'seen': iso(e['seen']) };\n            }\n        }\n\n        return {\n            'application': { 'title': str(app.title) || 'DKNR Domotic', 'version': str(app.version) },\n            'user': { 'login': login, 'level': hmi.level },\n            'now': new Date().toISOString(),\n            'counts': {\n                'rooms': Object.keys(rooms()).length,\n                'sources': Object.keys(global.get('source') || {}).length,\n                'parents': Object.keys(parents()).length,\n                'entities_visible': visibleCount,\n                'entities_hidden': hiddenCount,\n                'scenes': Object.keys(global.get('scene') || {}).length\n            },\n            'dknr': modes,\n            'notes': 'Binary values are 1 / 0 (unit \"rb\" reverts the meaning). Apertures: 1 = opened. Enum values are option keys. Mode commands: auto, high, low, manual.'\n        };\n    }\n};\n\ntools.list_rooms = {\n    'description': 'List rooms: id, name, outdoor flag and number of visible entities.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const all = entities();\n        let count = {};\n        for (const uid in all) {\n            if (all[uid]['hidden'] === 0 && blocks()[uid] !== true) {\n                count[all[uid]['room']] = (count[all[uid]['room']] || 0) + 1;\n            }\n        }\n        const base = rooms();\n\n        return Object.keys(base).map(id => ({\n            'id': id,\n            'name': str(base[id]['name']),\n            'outdoor': Number(base[id]['outdoor']) === 1 || base[id]['outdoor'] === true,\n            'entities': count[id] || 0\n        }));\n    }\n};\n\ntools.list_sources = {\n    'description': 'List DKNR sources (dknr-zigbee, dknr-zwave, dknr-teleinfo...): discovery info, last announced start, number of devices (parents) and entities.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const sources = global.get('source') || {};\n        const boot = global.get('sourceboot') || {};\n        const all = entities();\n        let stats = {};\n        for (const uid in all) {\n            const s = all[uid]['source'] || uid.split('/')[0];\n            stats[s] = stats[s] || { 'entities': 0, 'parents': new Set(), 'silent': 0 };\n            stats[s].entities++;\n            stats[s].parents.add(all[uid]['parent']);\n            if (all[uid]['hidden'] === 0 && silent(all[uid])) {\n                stats[s].silent++;\n            }\n        }\n        const names = new Set([...Object.keys(sources), ...Object.keys(stats)]);\n\n        return [...names].sort().map(s => ({\n            'source': s,\n            'title': str((sources[s] || {}).title),\n            'version': str((sources[s] || {}).version),\n            'git': str((sources[s] || {}).git),\n            'started': iso(boot[s]),\n            'parents': stats[s] ? stats[s].parents.size : 0,\n            'entities': stats[s] ? stats[s].entities : 0,\n            'silent_visible_entities': stats[s] ? stats[s].silent : 0\n        }));\n    }\n};\n\ntools.list_entities = {\n    'description': 'List entities (uid = source/parent/id) with name, room, element, value, unit, last seen and silent flag. Filters are combined. Hidden or blocked entities need include_hidden (admin level).',\n    'inputSchema': {\n        'type': 'object',\n        'properties': {\n            'room': { 'type': 'string', 'description': 'Room id' },\n            'source': { 'type': 'string', 'description': 'Source name (first part of uid)' },\n            'element': { 'type': 'string', 'description': 'Element: light, shutter, temperature, power, door, window, motion...' },\n            'search': { 'type': 'string', 'description': 'Text searched in uid and name (case insensitive)' },\n            'include_hidden': { 'type': 'boolean', 'description': 'Include hidden and blocked entities (admin)' },\n            'limit': { 'type': 'integer', 'minimum': 1, 'maximum': MAX_ENTITIES, 'description': 'Default ' + DEFAULT_ENTITIES }\n        }\n    },\n    'run': async (a) => {\n        await need('room.view');\n        const withHidden = a.include_hidden === true;\n        if (withHidden) {\n            await need('entity.view');\n        }\n        const limit = Math.min(Math.max(parseInt(a.limit) || DEFAULT_ENTITIES, 1), MAX_ENTITIES);\n        const search = str(a.search).toLowerCase();\n        const all = entities();\n        let res = [], total = 0;\n        for (const uid of Object.keys(all).sort()) {\n            const e = all[uid];\n            if (!(await visible(uid, e, withHidden))) { continue; }\n            if (str(a.room) !== '' && e['room'] !== a.room) { continue; }\n            if (str(a.source) !== '' && uid.split('/')[0] !== a.source) { continue; }\n            if (str(a.element) !== '' && e['element'] !== a.element) { continue; }\n            const b = brief(uid, e);\n            if (search !== '' && !(uid.toLowerCase().includes(search) || b.name.toLowerCase().includes(search))) { continue; }\n            total++;\n            if (res.length < limit) {\n                if (blocks()[uid] === true) { b.blocked = true; }\n                res.push(b);\n            }\n        }\n\n        return { 'total': total, 'returned': res.length, 'entities': res };\n    }\n};\n\ntools.get_entity = {\n    'description': 'Full detail of one entity: stored entity, last discovery, options, device, and the scenes it targets or triggers.',\n    'inputSchema': {\n        'type': 'object',\n        'properties': { 'uid': { 'type': 'string', 'description': 'Entity uid: source/parent/id' } },\n        'required': ['uid']\n    },\n    'run': async (a) => {\n        await need('room.view');\n        const e = await getEntity(a.uid);\n        const scenes = global.get('scene') || {};\n        let targetOf = typeof scenes[a.uid] === 'object' ? a.uid : null;\n        let triggers = [];\n        for (const t in scenes) {\n            if (typeof (scenes[t] || {}).trigger === 'object' && typeof scenes[t].trigger[a.uid] === 'object') {\n                triggers.push({ 'target': t, 'enabled': scenes[t]['enabled'] === 1, 'trigger': scenes[t].trigger[a.uid] });\n            }\n        }\n        const p = parents()[e['parent']];\n        const room = rooms()[e['room']];\n\n        return {\n            ...brief(a.uid, e),\n            'entity': e,\n            'discovery': (global.get('discovery') || {})[a.uid] || null,\n            'device': p ? { 'id': p['id'], 'name': p['name'], 'seen': iso(p['seen']) } : null,\n            'room_name': room ? room['name'] : null,\n            'scene_target': targetOf !== null && await can('scene.view') ? targetOf : null,\n            'scene_triggers': await can('scene.view') ? triggers : '(scene.view needed)'\n        };\n    }\n};\n\ntools.get_history = {\n    'description': 'History of one entity from InfluxDB (only visible entities with an element are recorded, on value change). Numbers are averaged per window, other values keep the last value per window.',\n    'inputSchema': {\n        'type': 'object',\n        'properties': {\n            'uid': { 'type': 'string', 'description': 'Entity uid: source/parent/id' },\n            'hours': { 'type': 'integer', 'minimum': 1, 'maximum': MAX_HOURS, 'description': 'Period in hours, default 24' },\n            'raw': { 'type': 'boolean', 'description': 'Every recorded change, no aggregation (last ' + MAX_RAW + ' at most), ex. to follow a shutter position' }\n        },\n        'required': ['uid']\n    },\n    'run': async (a) => {\n        await need('room.view');\n        const e = await getEntity(a.uid);\n        if (!/^[A-Za-z0-9_\\-./]+$/.test(a.uid)) {\n            throw new ToolError('Invalid uid');\n        }\n        const hours = Math.min(Math.max(parseInt(a.hours) || 24, 1), MAX_HOURS);\n        const textuals = global.get('describe.texts') || [];\n        const numeric = !['b', 'rb'].includes(e['unit']) && !textuals.includes(e['unit']);\n        const raw = a.raw === true;\n        const every = Math.max(1, Math.ceil(hours * 60 / MAX_POINTS));\n\n        const q = {\n            'query':\n                'from(bucket: \"domotic\")' +\n                '|> range(start: -' + hours + 'h, stop: now())' +\n                '|> filter(fn: (r) => r[\"_field\"] == \"' + a.uid + '\")' +\n                (raw ? '|> tail(n: ' + MAX_RAW + ')' : (numeric ? '|> toFloat()|> aggregateWindow(every: ' + every + 'm, fn: mean, createEmpty: false)' : '|> aggregateWindow(every: ' + every + 'm, fn: last, createEmpty: false)')) +\n                '|> yield(name: \"history\")',\n            'payload': ''\n        };\n        const r = await call('common - house - influxdb', q);\n        if (r.error) {\n            throw new ToolError('InfluxDB: ' + (r.error.message || r.error));\n        }\n        const rows = (Array.isArray(r.payload) ? r.payload : [])\n            .map(x => [new Date(x._time).getTime(), x._value])\n            .filter(x => !isNaN(x[0]) && x[1] !== null && x[1] !== undefined)\n            .sort((x, y) => x[0] - y[0])\n            .map(x => ({ 't': new Date(x[0]).toISOString(), 'v': numeric && !raw ? Math.round(Number(x[1]) * 100) / 100 : x[1] }));\n\n        return {\n            'uid': a.uid,\n            'name': entityName(e),\n            'unit': str(e['unit']),\n            'current': e['value'],\n            'hours': hours,\n            'window_minutes': raw ? 0 : every,\n            'aggregation': raw ? 'none' : (numeric ? 'mean' : 'last'),\n            'points': rows\n        };\n    }\n};\n\ntools.list_problems = {\n    'description': 'Things to check: silent visible entities (no news for 48h, 1h for a non zero power; remotes excluded, they only publish when pressed), low batteries, active alerts (element alert at 1) and scene anomalies (routine stopped on \"not found\", \"error\" or \"invalid\", scene without trigger). Normal stops (value unchanged, input between low and high levels, no output for this input, no dknr mode for the element, thermostat reached, scene disabled) are not listed: use get_scene for them.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('room.view');\n        const all = entities();\n        let silentList = [], batteries = [], alerts = [];\n        // Home energy storage is not a battery to change: skip the source of the Energy page battery\n        const storage = str((global.get('energy') || {})['battery_level']).split('/')[0];\n        for (const uid of Object.keys(all).sort()) {\n            const e = all[uid];\n            if (e['hidden'] !== 0 || blocks()[uid] === true) { continue; }\n            if (e['element'] !== 'remote' && silent(e)) { silentList.push(brief(uid, e)); }\n            if (e['element'] === 'battery' && e['unit'] === '%' && (storage === '' || uid.split('/')[0] !== storage) && e['value'] !== '' && Number(e['value']) <= LOW_BATTERY) { batteries.push(brief(uid, e)); }\n            if (e['element'] === 'alert' && Number(e['value']) === 1) { alerts.push(brief(uid, e)); }\n        }\n        let anomalies = '(scene.view needed)';\n        if (await can('scene.view')) {\n            anomalies = [];\n            const scenes = global.get('scene') || {};\n            for (const t of Object.keys(scenes).sort()) {\n                const s = await call('common - scene - summary', { 'payload': t });\n                const sum = typeof s.payload === 'object' ? s.payload : {};\n                // Routine results only (not the trigger, target, data, response lines)\n                let reasons = {};\n                for (const k in sum) {\n                    if (!['trigger', 'target', 'thdata', 'rsp', 'ts', 'level', 'manual'].includes(k) && typeof sum[k] === 'string' && /not found|error|invalid/i.test(sum[k])) {\n                        reasons[k] = sum[k];\n                    }\n                }\n                if (Object.keys(reasons).length > 0) {\n                    anomalies.push({ 'target': t, 'target_name': all[t] ? entityName(all[t]) : null, 'trigger': str(sum.trigger), 'at': iso(sum.ts), 'last_success': iso(s.routine), 'reasons': reasons });\n                }\n                if (Object.keys((scenes[t] || {}).trigger || {}).length === 0) {\n                    anomalies.push({ 'target': t, 'target_name': all[t] ? entityName(all[t]) : null, 'reasons': { 'trigger': 'scene without trigger' } });\n                }\n            }\n        }\n\n        return { 'silent': silentList, 'low_batteries': batteries, 'alerts': alerts, 'scene_anomalies': anomalies };\n    }\n};\n\nconst ROUTINES = ['motion', 'aperture', 'nocturnal', 'diurnal', 'confort', 'eco', 'nightlight', 'retention', 'illuminance', 'darkness', 'humidity', 'daily', 'openwork', 'tariff', 'power'];\n\ntools.list_scenes = {\n    'description': 'List scenes. A scene drives one target entity (scene key = target uid) from trigger entities, through routines.',\n    'inputSchema': { 'type': 'object', 'properties': {} },\n    'run': async () => {\n        await need('scene.view');\n        const scenes = global.get('scene') || {};\n        const all = entities();\n        const fields = global.get('describe.scenes') || {}; // scene fields by target element\n        let res = [];\n        for (const t of Object.keys(scenes).sort()) {\n            const s = scenes[t] || {};\n            const sum = await call('common - scene - summary', { 'payload': t });\n            const allowed = all[t] ? fields[all[t]['element']] : undefined;\n            const has = r => !Array.isArray(allowed) || allowed.includes(r);\n            let routines = ROUTINES.filter(r => Number(s[r]) > 0 && has(r));\n            // Duration is active as soon as it is set, for elements that use it\n            const duration = Array.isArray(allowed) && allowed.includes('duration') ? (Number(s['duration']) || 0) : 0;\n            if (duration > 0) {\n                routines.push('duration');\n            }\n            res.push({\n                'target': t,\n                'target_name': all[t] ? entityName(all[t]) : null,\n                'element': all[t] ? str(all[t]['element']) : null,\n                'enabled': s['enabled'] === 1,\n                'routines': routines,\n                'duration_minutes': duration,\n                'triggers': Object.keys(s.trigger || {}).length,\n                'last_failure': typeof sum.payload === 'object' && sum.payload.ts ? iso(sum.payload.ts) : null,\n                'last_success': iso(sum.routine)\n            });\n        }\n\n        return res;\n    }\n};\n\ntools.get_scene = {\n    'description': 'Full scene of a target entity: settings, triggers with names and current values, last failure summary (each routine result, first diagnostic tool) and last successful order.',\n    'inputSchema': {\n        'type': 'object',\n        'properties': { 'target': { 'type': 'string', 'description': 'Target entity uid (scene key)' } },\n        'required': ['target']\n    },\n    'run': async (a) => {\n        await need('scene.view');\n        const scenes = global.get('scene') || {};\n        const s = scenes[a.target];\n        if (typeof a.target !== 'string' || typeof s !== 'object') {\n            throw new ToolError('Unknown scene: ' + a.target);\n        }\n        const all = entities();\n        let triggers = [];\n        for (const uid in (s.trigger || {})) {\n            triggers.push({\n                ...(all[uid] ? brief(uid, all[uid]) : { 'uid': uid, 'missing': true }),\n                'settings': s.trigger[uid]\n            });\n        }\n        const sum = await call('common - scene - summary', { 'payload': a.target });\n        const settings = { ...s };\n        delete settings.trigger;\n\n        return {\n            'target': all[a.target] ? brief(a.target, all[a.target]) : { 'uid': a.target, 'missing': true },\n            'settings': settings,\n            'triggers': triggers,\n            'last_failure': typeof sum.payload === 'object' && Object.keys(sum.payload).length > 0 ? { 'at': iso(sum.payload.ts), 'summary': sum.payload } : null,\n            'last_success': iso(sum.routine),\n            'notes': 'Trigger settings: inputhigh / inputlow values, outputhigh / outputlow among none, high, low, toggle. Failure summary lists each routine result in chain order.'\n        };\n    }\n};\n\n\n// --- Run ---\n\ndelete msg.tool_error;\ndelete msg.tool_internal;\n\nconst name = str(msg.tool);\nif (name === '') {\n    msg.payload = Object.keys(tools).map(n => ({ 'name': n, 'description': tools[n].description, 'inputSchema': tools[n].inputSchema }));\n\n    return msg;\n}\n\nconst tool = tools[name];\nif (!tool) {\n    msg.payload = null;\n    msg.tool_error = 'Unknown tool: ' + name;\n\n    return msg;\n}\n\ntry {\n    msg.payload = await tool.run(typeof msg.arguments === 'object' && msg.arguments !== null ? msg.arguments : {});\n    node.status({ 'fill': 'green', 'text': login + ' ' + name });\n} catch (err) {\n    msg.payload = null;\n    msg.tool_error = err.message;\n    if (!(err instanceof ToolError)) {\n        msg.tool_internal = true;\n        node.warn(name + ': ' + err.message);\n    }\n    node.status({ 'fill': 'red', 'text': login + ' ' + name });\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 4100,
+        "wires": [
+            [
+                "a88674d98ee876ce"
+            ]
+        ]
+    },
+    {
+        "id": "a88674d98ee876ce",
+        "type": "link out",
+        "z": "4bc72a1112cb448c",
+        "g": "a370c14753518df7",
+        "name": "common - house - tool",
+        "mode": "return",
+        "links": [],
+        "x": 755,
+        "y": 4100,
+        "wires": []
+    },
+    {
+        "id": "a370c14753518df7",
+        "type": "group",
+        "z": "4bc72a1112cb448c",
+        "name": "common - house - tool",
+        "style": {
+            "fill": "#ff0000",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "c24d52a763ed04f4",
+            "148ee4698e99644a",
+            "a88674d98ee876ce"
+        ],
+        "x": 49,
+        "y": 4059,
+        "w": 802,
+        "h": 82
+    },
+    {
+        "id": "56571c8826aa963d",
+        "type": "link in",
+        "z": "4bc72a1112cb448c",
+        "g": "9abd2e09fd353596",
+        "name": "common - energy - day",
+        "links": [],
+        "x": 145,
+        "y": 4400,
+        "wires": [
+            [
+                "702264ef948263b6"
+            ]
+        ]
+    },
+    {
+        "id": "702264ef948263b6",
+        "type": "function",
+        "z": "4bc72a1112cb448c",
+        "g": "9abd2e09fd353596",
+        "name": "query",
+        "func": "/*\nEnergy of yesterday and today (Energy page summary, Telegram daily summary): meters spread and power integrals.\nIn: msg.dictionary (labels). Out: msg.payload { unit, locale, columns, empty, ratio_label, lines, ratio }.\n*/\n\nconst entity = { ...(global.get('entity') || { }) };\nconst energy = { ...(global.get('energy') || { }) };\n\nconst visible = (uid) => uid !== '' && typeof entity[uid] === 'object' && entity[uid]['hidden'] === 0;\n\n// Meters are indexes: daily energy is the spread (max - min) of each day\nmsg.meters = {};\nfor (const e of [ 'favorable_energy_meter', 'unfavorable_energy_meter' ]) {\n    const uid = energy[e] || '';\n    if (visible(uid)) {\n        msg.meters[uid] = { 'key': e, 'unit': entity[uid]['unit'] };\n    }\n}\n\n// Powers are integrated to get energy\nmsg.powers = {};\nif (visible('dknr/sensor/home_power')) {\n    msg.powers['dknr/sensor/home_power'] = { 'key': 'home_power', 'unit': entity['dknr/sensor/home_power']['unit'] || 'W' };\n}\nfor (const e of [ 'grid_power', 'solar_power', 'battery_power' ]) {\n    const uid = energy[e] || '';\n    if (visible(uid)) {\n        msg.powers[uid] = { 'key': e, 'unit': entity[uid]['unit'] || 'W' };\n    }\n}\n\nconst meters = Object.keys(msg.meters);\nconst powers = Object.keys(msg.powers);\nif (meters.length === 0 && powers.length === 0) {\n    node.status({ 'fill': 'red', 'text': 'no energy entity' });\n\n    // Empty summary\n    msg.payload = [];\n    msg.start = new Date().setHours(0, 0, 0, 0) - 86400000;\n\n    return [null, msg];\n}\n\n// Days follow local time\nlet tz = env.get('TZ') || '';\nif (!/^[A-Za-z_]+\\/[A-Za-z_\\/]+$/.test(tz)) {\n    tz = 'Europe/Paris';\n}\n\n// Yesterday midnight (local time of the server)\nlet start = new Date();\nstart.setHours(0, 0, 0, 0);\nstart.setDate(start.getDate() - 1);\nmsg.start = start.getTime();\n\nconst filter = (uids) => '|> filter(fn: (r) => ' + uids.map(u => 'r[\"_field\"] == \"' + u + '\"').join(' or ') + ')';\n\nmsg.query =\n'import \"timezone\"\\n' +\n'option location = timezone.location(name: \"' + tz + '\")\\n';\n\nif (meters.length > 0) {\n    msg.query +=\n    'from(bucket: \"domotic\")' +\n    '|> range(start: ' + new Date(msg.start).toISOString() + ', stop: now())' +\n    '|> filter(fn: (r) => r[\"_measurement\"] == \"energy\")' +\n    filter(meters) +\n    '|> toFloat()' +\n    '|> aggregateWindow(every: 1d, fn: spread, createEmpty: false, timeSrc: \"_start\")' +\n    '|> yield(name: \"meter\")\\n';\n}\n\n// One hour before yesterday midnight to get the power at midnight\nif (powers.length > 0) {\n    msg.query +=\n    'from(bucket: \"domotic\")' +\n    '|> range(start: ' + new Date(msg.start - 3600000).toISOString() + ', stop: now())' +\n    filter(powers) +\n    '|> toFloat()' +\n    '|> aggregateWindow(every: 1m, fn: mean, createEmpty: false, timeSrc: \"_start\")' +\n    '|> yield(name: \"power\")\\n';\n}\n\nnode.status({ 'text': meters.length + ' meter(s), ' + powers.length + ' power(s)' });\n\nreturn [msg, null];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 4400,
+        "wires": [
+            [
+                "8236ac2330ef3439"
+            ],
+            [
+                "1528ab83486605da"
+            ]
+        ]
+    },
+    {
+        "type": "influxdb in",
+        "influxdb": "cf56c7fff4df45c2",
+        "name": "db",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "dknr",
+        "id": "8236ac2330ef3439",
+        "z": "4bc72a1112cb448c",
+        "g": "9abd2e09fd353596",
+        "x": 480,
+        "y": 4400,
+        "wires": [
+            [
+                "1528ab83486605da"
+            ]
+        ]
+    },
+    {
+        "id": "1528ab83486605da",
+        "type": "function",
+        "z": "4bc72a1112cb448c",
+        "g": "9abd2e09fd353596",
+        "name": "compute",
+        "func": "// Summary data: energy of yesterday and today by type, and self-sufficiency\n// Powers sign: grid > 0 import, solar > 0 production, battery > 0 discharge / < 0 charge\n\nconst dict = (msg.dictionary || {}).energy || {};\nconst rows = Array.isArray(msg.payload) ? msg.payload : [];\nconst meters = msg.meters || {};\nconst powers = msg.powers || {};\n\n// Day boundaries: yesterday, today, now\nconst d0 = msg.start;\nlet d1 = new Date(d0);\nd1.setDate(d1.getDate() + 1);\nd1 = d1.getTime();\nconst d2 = Date.now();\nconst day = (ts) => ts >= d1 ? 1 : (ts >= d0 ? 0 : -1);\n\n// Energy in kWh, [yesterday, today]\nlet sums = {};\nconst add = (key, i, value) => {\n    if (typeof sums[key] !== 'object') {\n        sums[key] = [0, 0];\n    }\n    if (i >= 0) {\n        sums[key][i] += value;\n    }\n};\nconst factor = { 'mW': 0.001, 'W': 1, 'kW': 1000, 'MW': 1000000, 'mWh': 0.001, 'Wh': 1, 'kWh': 1000, 'MWh': 1000000 };\n\n// Meters: one spread per day\nfor (const r of rows) {\n    const m = meters[r['_field']];\n    const ts = new Date(r['_time']).getTime();\n    const value = Number(r['_value']);\n    if (typeof m !== 'object' || isNaN(ts) || isNaN(value)) {\n\n        continue;\n    }\n    // Window start is local midnight, allow one hour for daylight saving time changes\n    add(m['key'], day(ts + 3600000), value * (factor[m['unit']] || 1) / 1000);\n}\n\n// Powers: each value is held until the next one (one hour at most), split by day\nlet points = {};\nfor (const r of rows) {\n    const p = powers[r['_field']];\n    const ts = new Date(r['_time']).getTime();\n    const value = Number(r['_value']);\n    if (typeof p !== 'object' || isNaN(ts) || isNaN(value)) {\n\n        continue;\n    }\n    if (!Array.isArray(points[r['_field']])) {\n        points[r['_field']] = [];\n    }\n    points[r['_field']].push([ts, value * (factor[p['unit']] || 1)]);\n}\nfor (const uid in points) {\n    const key = powers[uid]['key'];\n    const pts = points[uid].sort((a, b) => a[0] - b[0]);\n    for (let i = 0; i < pts.length; i++) {\n        const from = pts[i][0];\n        const to = Math.min(i + 1 < pts.length ? pts[i + 1][0] : d2, from + 3600000, d2);\n        const w = pts[i][1];\n        // Cut the interval at day boundaries\n        for (const [a, b] of [[Math.max(from, d0), Math.min(to, d1)], [Math.max(from, d1), Math.min(to, d2)]]) {\n            if (b <= a) {\n\n                continue;\n            }\n            const kwh = w * (b - a) / 3600000 / 1000;\n            const k = a >= d1 ? 1 : 0;\n            if (key === 'battery_power') {\n                add('battery_discharge', k, Math.max(kwh, 0));\n                add('battery_charge', k, Math.max(-kwh, 0));\n            }\n            else {\n                add(key, k, Math.max(kwh, 0));\n            }\n        }\n    }\n}\n\nconst round = (v) => Math.round(v * 100) / 100;\nconst lines = [\n    ['favorable_energy_meter', dict.favorable || 'Favorable tariff', '#2ca02c'],\n    ['unfavorable_energy_meter', dict.unfavorable || 'Unfavorable tariff', '#e34948'],\n    ['home_power', dict.home_energy || 'Home total', '#2a78d6'],\n    ['solar_power', dict.solar_energy || 'Solar production', '#eda100'],\n    ['battery_charge', dict.battery_charge || 'Battery charge', '#2ca02c'],\n    ['battery_discharge', dict.battery_discharge || 'Battery discharge', '#98d98e']\n];\nlet res = [];\nfor (const [key, label, color] of lines) {\n    if (typeof sums[key] === 'object') {\n        res.push({ 'key': key, 'label': label, 'color': color, 'values': sums[key].map(round) });\n    }\n}\n\n// Self-sufficiency: part of the home consumption not taken from the grid\nlet ratio = [null, null];\nif (typeof sums['home_power'] === 'object' && typeof sums['grid_power'] === 'object') {\n    for (const i of [0, 1]) {\n        const home = sums['home_power'][i];\n        if (home > 0) {\n            ratio[i] = Math.round(Math.max(0, Math.min(1, 1 - sums['grid_power'][i] / home)) * 100);\n        }\n    }\n}\n\nnode.status({ 'text': res.length + ' lines, ' + ratio.map(r => r === null ? '-' : r + '%').join(' / ') });\n\ndelete msg.meters;\ndelete msg.powers;\ndelete msg.query;\ndelete msg.start;\nmsg.payload = {\n    'unit': 'kWh',\n    'locale': ((msg.dictionary || {}).common || {}).locales || 'fr',\n    'columns': [dict.yesterday || 'Yesterday', dict.today || 'Today'],\n    'empty': dict.summary_empty || 'No energy data',\n    'ratio_label': dict.selfsufficiency || 'Self-sufficiency',\n    'lines': res,\n    'ratio': ratio\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 4400,
+        "wires": [
+            [
+                "f28aa55bb5ec8d40"
+            ]
+        ]
+    },
+    {
+        "id": "f28aa55bb5ec8d40",
+        "type": "link out",
+        "z": "4bc72a1112cb448c",
+        "g": "9abd2e09fd353596",
+        "name": "common - energy - day",
+        "mode": "return",
+        "links": [],
+        "x": 835,
+        "y": 4400,
+        "wires": []
+    },
+    {
+        "id": "d148169328008cf0",
+        "type": "catch",
+        "z": "4bc72a1112cb448c",
+        "g": "9abd2e09fd353596",
+        "name": "catch db",
+        "scope": [
+            "8236ac2330ef3439"
+        ],
+        "uncaught": false,
+        "x": 300,
+        "y": 4460,
+        "wires": [
+            [
+                "c6bbfe52bbcae745"
+            ]
+        ]
+    },
+    {
+        "id": "c6bbfe52bbcae745",
+        "type": "function",
+        "z": "4bc72a1112cb448c",
+        "g": "9abd2e09fd353596",
+        "name": "error",
+        "func": "// No energy data on database error\nmsg.payload = [];\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 4460,
+        "wires": [
+            [
+                "1528ab83486605da"
+            ]
+        ]
+    },
+    {
+        "id": "9abd2e09fd353596",
+        "type": "group",
+        "z": "4bc72a1112cb448c",
+        "name": "common - energy - day",
+        "style": {
+            "fill": "#ff0000",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "56571c8826aa963d",
+            "702264ef948263b6",
+            "8236ac2330ef3439",
+            "1528ab83486605da",
+            "f28aa55bb5ec8d40",
+            "d148169328008cf0",
+            "c6bbfe52bbcae745"
+        ],
+        "x": 49,
+        "y": 4359,
+        "w": 882,
+        "h": 142
+    },
+    {
+        "id": "ffd0325628f7d671",
+        "type": "link in",
+        "z": "fd2a6bc9e0687100",
+        "g": "1cf3d75a9ce43dc6",
+        "name": "telegram - boot",
+        "links": [
+            "71f58f96971c0613"
+        ],
+        "x": 145,
+        "y": 100,
+        "wires": [
+            [
+                "2f9b7946e32e3708"
+            ]
+        ]
+    },
+    {
+        "id": "2f9b7946e32e3708",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "1cf3d75a9ce43dc6",
+        "name": "dictionary",
+        "func": "// Register Telegram texts (no page, see docs/CONCEPTION.md \"Telegram\")\n\nmsg.payload = {\n    'flow': env.get('NR_FLOW_NAME'),\n    'en': {\n        'sep': ': ',\n        'unknown_chat': 'Hello! This bot belongs to a DKNR Domotic installation.\\nYour chat number is <b>{id}</b>: give it to the administrator to be linked to your account.',\n        'help': '<b>DKNR Domotic</b>\\n/house: house overview\\n/rooms: rooms\\n/room name: entities of a room\\n/search text: search entities\\n/problems: things to check\\n/scenes: scenes\\n/summary: daily summary\\nA room name or a text without command works too.',\n        'cmd_house': 'House overview',\n        'cmd_rooms': 'Rooms',\n        'cmd_room': 'Entities of a room',\n        'cmd_search': 'Search entities',\n        'cmd_problems': 'Things to check',\n        'cmd_scenes': 'Scenes',\n        'cmd_summary': 'Daily summary',\n        'cmd_help': 'Help',\n        'denied': 'Not allowed for your user level.',\n        'error': 'Sorry, an error occurred.',\n        'not_found': 'Nothing found for \"{text}\".',\n        'room_unknown': 'Unknown room \"{text}\". /rooms gives the list.',\n        'room_empty': 'No visible entity in this room.',\n        'search_missing': 'Text to search: /search text',\n        'more': '… and {n} more',\n        'house': '<b>{title} {version}</b>\\n{rooms} rooms, {entities} entities, {scenes} scenes',\n        'house_problems': '{n} thing(s) to check: /problems',\n        'house_ok': 'Nothing to check.',\n        'rooms': '<b>Rooms</b>',\n        'outdoor': 'outdoor',\n        'problems': '<b>Things to check</b>',\n        'problems_none': '✅ Nothing to check.',\n        'alert': '🔔 Alert',\n        'battery': '🪫 Low battery',\n        'silent': '📵 Silent',\n        'scene': '🎬 Scene',\n        'scene_no_trigger': 'without trigger',\n        'scenes': '<b>Scenes</b>',\n        'scenes_none': 'No scene.',\n        'scene_disabled': 'disabled',\n        'scene_failure': 'last failure {at}',\n        'since': 'since {d}',\n        'days': '{n} d',\n        'hours': '{n} h',\n        'minutes': '{n} min',\n        'watch_new': '<b>⚠️ To check</b>',\n        'watch_resolved': '<b>✅ Resolved</b>',\n        'summary': '<b>Summary of {date}</b>',\n        'summary_outdoor': '<b>🌡 Outdoor</b>',\n        'summary_minmax': '{name}: {min} → {max} °C, now {now} °C',\n        'summary_tomorrow': 'Tomorrow: {min} → {max} °C',\n        'summary_energy': '<b>⚡ Energy today</b>',\n        'summary_ratio': 'Self-sufficiency: {n} %',\n        'summary_problems': '<b>⚠️ To check</b>',\n        'summary_ok': '✅ Nothing to check.',\n        'on': 'on',\n        'off': 'off',\n        'open': 'opened',\n        'close': 'closed',\n        'detected': 'detected',\n        'nothing': 'nothing',\n        'locked': 'locked',\n        'unlocked': 'unlocked'\n    },\n    'fr': {\n        'sep': ' : ',\n        'unknown_chat': 'Bonjour ! Ce bot appartient à une installation DKNR Domotic.\\nTon numéro de chat est <b>{id}</b> : donne-le à l\\'administrateur pour être lié à ton compte.',\n        'help': '<b>DKNR Domotic</b>\\n/maison : vue d\\'ensemble\\n/pieces : les pièces\\n/piece nom : les entités d\\'une pièce\\n/cherche texte : chercher des entités\\n/problemes : ce qui est à vérifier\\n/scenes : les scènes\\n/resume : le résumé du jour\\nUn nom de pièce ou un texte sans commande marche aussi.',\n        'cmd_house': 'Vue d\\'ensemble de la maison',\n        'cmd_rooms': 'Les pièces',\n        'cmd_room': 'Les entités d\\'une pièce',\n        'cmd_search': 'Chercher des entités',\n        'cmd_problems': 'Ce qui est à vérifier',\n        'cmd_scenes': 'Les scènes',\n        'cmd_summary': 'Le résumé du jour',\n        'cmd_help': 'Aide',\n        'denied': 'Pas autorisé pour ton niveau d\\'utilisateur.',\n        'error': 'Désolé, une erreur est survenue.',\n        'not_found': 'Rien trouvé pour « {text} ».',\n        'room_unknown': 'Pièce « {text} » inconnue. /pieces donne la liste.',\n        'room_empty': 'Aucune entité visible dans cette pièce.',\n        'search_missing': 'Texte à chercher : /cherche texte',\n        'more': '… et {n} de plus',\n        'house': '<b>{title} {version}</b>\\n{rooms} pièces, {entities} entités, {scenes} scènes',\n        'house_problems': '{n} chose(s) à vérifier : /problemes',\n        'house_ok': 'Rien à vérifier.',\n        'rooms': '<b>Pièces</b>',\n        'outdoor': 'extérieur',\n        'problems': '<b>À vérifier</b>',\n        'problems_none': '✅ Rien à vérifier.',\n        'alert': '🔔 Alerte',\n        'battery': '🪫 Pile faible',\n        'silent': '📵 Muet',\n        'scene': '🎬 Scène',\n        'scene_no_trigger': 'sans déclencheur',\n        'scenes': '<b>Scènes</b>',\n        'scenes_none': 'Aucune scène.',\n        'scene_disabled': 'désactivée',\n        'scene_failure': 'dernier échec {at}',\n        'since': 'depuis {d}',\n        'days': '{n} j',\n        'hours': '{n} h',\n        'minutes': '{n} min',\n        'watch_new': '<b>⚠️ À vérifier</b>',\n        'watch_resolved': '<b>✅ Résolu</b>',\n        'summary': '<b>Résumé du {date}</b>',\n        'summary_outdoor': '<b>🌡 Extérieur</b>',\n        'summary_minmax': '{name} : {min} → {max} °C, actuellement {now} °C',\n        'summary_tomorrow': 'Demain : {min} → {max} °C',\n        'summary_energy': '<b>⚡ Energie du jour</b>',\n        'summary_ratio': 'Autosuffisance : {n} %',\n        'summary_problems': '<b>⚠️ À vérifier</b>',\n        'summary_ok': '✅ Rien à vérifier.',\n        'on': 'allumé',\n        'off': 'éteint',\n        'open': 'ouvert',\n        'close': 'fermé',\n        'detected': 'détecté',\n        'nothing': 'rien',\n        'locked': 'verrouillé',\n        'unlocked': 'déverrouillé'\n    }\n};\n\nmsg = await node.linkcall('common - register - dictionary', msg);\n\nreturn;\n",
+        "outputs": 0,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "1cf3d75a9ce43dc6",
+        "type": "group",
+        "z": "fd2a6bc9e0687100",
+        "name": "telegram - boot",
+        "style": {
+            "fill": "#0088cc",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "ffd0325628f7d671",
+            "2f9b7946e32e3708"
+        ],
+        "x": 49,
+        "y": 59,
+        "w": 497,
+        "h": 82
+    },
+    {
+        "id": "3fc79029d74c9e4f",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "556c17ad426ecc12",
+        "name": "send",
+        "func": "/*\nSend to Telegram: msg.chat + msg.text (HTML, cut in parts of 4000 characters at most), or msg.api + msg.body.\nmsg.chat = 'all' sends to every linked account (users with a Telegram chat number).\n*/\nconst token = flow.get('token') || '';\nif (token === '') {\n\n    return;\n}\nconst url = (api) => flow.get('api') + token + '/' + api;\nconst request = (api, body) => ({ 'method': 'POST', 'url': url(api), 'headers': { 'Content-Type': 'application/json' }, 'payload': JSON.stringify(body), 'requestTimeout': 30000, 'api': api, 'chat': body.chat_id || '' });\n\nif (typeof msg.api === 'string') {\n\n    return request(msg.api, msg.body || {});\n}\n\nif (typeof msg.text !== 'string' || msg.text === '') {\n\n    return;\n}\n\nlet chats = [];\nif (msg.chat === 'all') {\n    const auth = global.get('auth') || {}; // read\n    for (const login in auth) {\n        const id = String((auth[login] || {}).telegram || '').trim();\n        if (/^-?\\d{1,20}$/.test(id) && !chats.includes(id)) {\n            chats.push(id);\n        }\n    }\n} else if (/^-?\\d{1,20}$/.test(String(msg.chat))) {\n    chats.push(String(msg.chat));\n}\n\n// Cut on lines\nlet parts = [];\nlet part = '';\nfor (const line of msg.text.split('\\n')) {\n    if (part !== '' && (part + '\\n' + line).length > 4000) {\n        parts.push(part);\n        part = '';\n    }\n    part = part === '' ? line.substring(0, 4000) : part + '\\n' + line;\n}\nif (part !== '') {\n    parts.push(part);\n}\n\nfor (const chat of chats) {\n    for (const p of parts) {\n        node.send(request('sendMessage', { 'chat_id': chat, 'text': p, 'parse_mode': 'HTML', 'disable_web_page_preview': true }));\n    }\n}\nnode.status({ 'text': chats.length + ' chat(s), ' + parts.length + ' part(s)' });\n\nreturn;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 560,
+        "wires": [
+            [
+                "db1e0048a00603a0"
+            ]
+        ]
+    },
+    {
+        "id": "db1e0048a00603a0",
+        "type": "delay",
+        "z": "fd2a6bc9e0687100",
+        "g": "556c17ad426ecc12",
+        "name": "1/s",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 650,
+        "y": 560,
+        "wires": [
+            [
+                "43310880289a64e1"
+            ]
+        ]
+    },
+    {
+        "id": "43310880289a64e1",
+        "type": "http request",
+        "z": "fd2a6bc9e0687100",
+        "g": "556c17ad426ecc12",
+        "name": "send",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 850,
+        "y": 560,
+        "wires": [
+            [
+                "04cdd74830546fc2"
+            ]
+        ]
+    },
+    {
+        "id": "04cdd74830546fc2",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "556c17ad426ecc12",
+        "name": "sent",
+        "func": "// Telegram answer\nconst res = typeof msg.payload === 'object' && msg.payload !== null ? msg.payload : {};\nif (msg.statusCode === 200 && res.ok === true) {\n    node.status({ 'fill': 'green', 'text': msg.api + ' ' + msg.chat });\n} else {\n    // 403: the user blocked the bot or never started it\n    node.status({ 'fill': 'red', 'text': msg.api + ' ' + msg.chat + ' ' + msg.statusCode });\n    node.warn('Telegram ' + msg.api + ' ' + msg.chat + ' ' + msg.statusCode + ': ' + (res.description || ''));\n}\n\nreturn;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 560,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e105ccf6c9a5f24b",
+        "type": "catch",
+        "z": "fd2a6bc9e0687100",
+        "g": "556c17ad426ecc12",
+        "name": "catch send",
+        "scope": [
+            "43310880289a64e1"
+        ],
+        "uncaught": false,
+        "x": 850,
+        "y": 620,
+        "wires": [
+            [
+                "04cdd74830546fc2"
+            ]
+        ]
+    },
+    {
+        "id": "556c17ad426ecc12",
+        "type": "group",
+        "z": "fd2a6bc9e0687100",
+        "name": "telegram - send",
+        "style": {
+            "fill": "#0088cc",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "3fc79029d74c9e4f",
+            "db1e0048a00603a0",
+            "43310880289a64e1",
+            "04cdd74830546fc2",
+            "e105ccf6c9a5f24b"
+        ],
+        "x": 354,
+        "y": 519,
+        "w": 792,
+        "h": 142
+    },
+    {
+        "id": "3f2a249fb09b5999",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "0bf539ed566193e7",
+        "name": "command",
+        "func": "/*\nMessage received from a chat: questions on the house (read only, same tools and access keys as the MCP server).\nOnly chats linked to an account (user field \"telegram\") get an answer, an unknown private chat gets its number.\n*/\nconst chat = String(msg.chat || '');\n\n// Linked account\nconst auth = global.get('auth') || {}; // read\nlet login = '';\nfor (const l in auth) {\n    if (String((auth[l] || {}).telegram || '').trim() === chat) {\n        login = l;\n        break;\n    }\n}\n\nconst texts = (lang) => ({ ...(global.get('dictionary.en.telegram') || {}), ...(global.get('dictionary[\"' + lang + '\"].telegram') || {}) });\nconst fill = (t, v) => String(t || '').replace(/\\{(\\w+)\\}/g, (m, k) => v[k] !== undefined ? v[k] : m);\nconst html = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst answer = (text) => ({ 'chat': chat, 'text': text });\n\nif (login === '') {\n    // Unknown chat: give its number (private chat only, once per hour)\n    if (msg.private !== true) {\n\n        return;\n    }\n    let asked = flow.get('unknown') || {};\n    if ((asked[chat] || 0) > Date.now() - 3600000) {\n\n        return;\n    }\n    asked[chat] = Date.now();\n    flow.set('unknown', asked);\n    node.status({ 'fill': 'yellow', 'text': 'unknown chat ' + chat });\n\n    return answer(fill(texts(msg.lang.startsWith('fr') ? 'fr' : 'en').unknown_chat, { 'id': chat }));\n}\n\nconst account = auth[login];\nconst lang = account.lang || 'fr';\nconst d = texts(lang);\nconst hmi = { ...(global.get('describe.template.hmi') || {}), 'login': login, 'level': account.level || '', 'lang': lang };\nconst locale = (global.get('dictionary[\"' + lang + '\"].common.locales') || global.get('dictionary.en.common.locales') || 'fr');\n\nconst MAX_LINES = 60;\n\nclass Denied extends Error {}\nconst tool = async (name, args) => {\n    const r = await node.linkcall('common - house - tool', { 'hmi': hmi, 'tool': name, 'arguments': args || {} }, { 'timeout': 60000 });\n    if (typeof r.tool_error === 'string') {\n        if (r.tool_error.startsWith('Access denied')) {\n            throw new Denied(r.tool_error);\n        }\n        throw new Error(r.tool_error);\n    }\n\n    return r.payload;\n};\n\n// Text compared without case and accents\nconst norm = (v) => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();\nconst rooms = global.get('room.base') || {};\nconst roomName = (id) => (rooms[id] || {}).name || id || '-';\nconst findRoom = (t) => {\n    const n = norm(t);\n    if (n === '') {\n\n        return null;\n    }\n    const ids = Object.keys(rooms);\n\n    return ids.find(id => norm(id) === n || norm(rooms[id].name) === n)\n        || ids.find(id => norm(rooms[id].name).startsWith(n))\n        || ids.find(id => norm(rooms[id].name).includes(n))\n        || null;\n};\n\nconst ago = (iso) => {\n    const s = Math.max(0, Date.now() - new Date(iso).getTime()) / 1000;\n    if (isNaN(s)) {\n\n        return '-';\n    }\n\n    return s >= 86400 ? fill(d.days, { 'n': Math.floor(s / 86400) }) : (s >= 3600 ? fill(d.hours, { 'n': Math.floor(s / 3600) }) : fill(d.minutes, { 'n': Math.floor(s / 60) }));\n};\nconst number = (v) => {\n    const n = Number(v);\n\n    return isNaN(n) ? String(v) : n.toLocaleString(locale, { 'maximumFractionDigits': 2 });\n};\n\n// Value as shown in the rooms page\nconst reverts = global.get('describe.reverts') || [];\nconst textuals = global.get('describe.texts') || [];\nconst value = (b) => {\n    const e = (global.get('entity') || {})[b.uid] || {};\n    if (['b', 'rb'].includes(b.unit)) {\n        const on = ((Number(b.value) ? 1 : 0) ^ ((b.unit === 'rb') !== reverts.includes(b.element) ? 1 : 0)) === 1;\n        if (['door', 'window', 'aperture', 'shutter', 'slider'].includes(b.element)) {\n\n            return on ? d.open : d.close;\n        }\n        if (b.element === 'motion') {\n\n            return on ? d.detected : d.nothing;\n        }\n        if (b.element === 'lock') {\n\n            return on ? d.locked : d.unlocked;\n        }\n\n        return on ? d.on : d.off;\n    }\n    if (b.unit === '8b') {\n\n        return Math.round(Number(b.value) * 100 / 255) + ' %';\n    }\n    if (textuals.includes(b.unit)) {\n        const enums = global.get('describe[\"enum\"][\"' + e.source + '\"][\"' + e.id + '\"]') || {};\n        const options = e.options || {};\n\n        return Array.isArray(enums[b.value]) ? enums[b.value][1] : (options[b.value] || String(b.value ?? ''));\n    }\n\n    return number(b.value) + (b.unit !== '' ? ' ' + b.unit : '');\n};\nconst line = (b, withRoom) => '• ' + html(b.name) + (withRoom ? ' (' + html(roomName(b.room)) + ')' : '') + d.sep + html(value(b)) + (b.silent ? ' 📵' : '');\nconst cut = (lines) => lines.length > MAX_LINES ? [...lines.slice(0, MAX_LINES), fill(d.more, { 'n': lines.length - MAX_LINES })] : lines;\n\n// --- Commands ---\n\nconst commands = {};\n\ncommands.help = async () => d.help;\n\ncommands.house = async () => {\n    const h = await tool('get_house');\n    let out = [fill(d.house, {\n        'title': html(h.application.title),\n        'version': html(h.application.version),\n        'rooms': h.counts.rooms,\n        'entities': h.counts.entities_visible,\n        'scenes': h.counts.scenes\n    })];\n    // House sensors (dknr source): day / night, sun...\n    const all = global.get('entity') || {};\n    let sensors = [];\n    for (const uid of Object.keys(h.dknr || {}).sort()) {\n        if (uid.startsWith('dknr/sensor/') && typeof all[uid] === 'object' && all[uid].hidden === 0) {\n            sensors.push(line({ 'uid': uid, 'name': all[uid].name || uid, 'value': h.dknr[uid].value, 'unit': h.dknr[uid].unit, 'element': all[uid].element || '', 'silent': false }, false));\n        }\n    }\n    if (sensors.length > 0) {\n        out.push('', ...sensors);\n    }\n    const p = await tool('list_problems');\n    const n = p.silent.length + p.low_batteries.length + p.alerts.length + (Array.isArray(p.scene_anomalies) ? p.scene_anomalies.length : 0);\n    out.push('', n > 0 ? fill(d.house_problems, { 'n': n }) : d.house_ok);\n\n    return out.join('\\n');\n};\n\ncommands.rooms = async () => {\n    const list = await tool('list_rooms');\n\n    return [d.rooms, ...list\n        .filter(r => r.entities > 0)\n        .sort((a, b) => a.name.localeCompare(b.name, locale))\n        .map(r => '• ' + html(r.name) + ' (' + r.entities + (r.outdoor ? ', ' + d.outdoor : '') + ')')\n    ].join('\\n');\n};\n\ncommands.room = async (arg) => {\n    const id = findRoom(arg);\n    if (id === null) {\n\n        return fill(d.room_unknown, { 'text': html(arg) });\n    }\n    const r = await tool('list_entities', { 'room': id, 'limit': 500 });\n    if (r.entities.length === 0) {\n\n        return '<b>' + html(roomName(id)) + '</b>\\n' + d.room_empty;\n    }\n    // Commands and sensors together, by element then name\n    const lines = r.entities\n        .filter(b => b.element !== '' && b.element !== 'remote')\n        .sort((a, b) => a.element.localeCompare(b.element) || a.name.localeCompare(b.name, locale))\n        .map(b => line(b, false));\n\n    return ['<b>' + html(roomName(id)) + '</b>', ...cut(lines)].join('\\n');\n};\n\ncommands.search = async (arg) => {\n    if (norm(arg) === '') {\n\n        return d.search_missing;\n    }\n    const r = await tool('list_entities', { 'search': arg, 'limit': MAX_LINES });\n    if (r.total === 0) {\n\n        return fill(d.not_found, { 'text': html(arg) });\n    }\n    let lines = r.entities.map(b => line(b, true));\n    if (r.total > r.returned) {\n        lines.push(fill(d.more, { 'n': r.total - r.returned }));\n    }\n\n    return lines.join('\\n');\n};\n\ncommands.problems = async () => {\n    const p = await tool('list_problems');\n    let lines = [];\n    for (const b of p.alerts) {\n        lines.push(d.alert + d.sep + html(b.name) + ' (' + html(roomName(b.room)) + ')');\n    }\n    for (const b of p.low_batteries) {\n        lines.push(d.battery + d.sep + html(b.name) + ' (' + html(roomName(b.room)) + ', ' + number(b.value) + ' %)');\n    }\n    for (const b of p.silent) {\n        lines.push(d.silent + d.sep + html(b.name) + ' (' + html(roomName(b.room)) + ', ' + fill(d.since, { 'd': ago(b.seen) }) + ')');\n    }\n    for (const a of (Array.isArray(p.scene_anomalies) ? p.scene_anomalies : [])) {\n        const why = a.reasons.trigger === 'scene without trigger' ? d.scene_no_trigger : Object.keys(a.reasons).map(k => k + d.sep + a.reasons[k]).join(', ');\n        lines.push(d.scene + d.sep + html(a.target_name || a.target) + ' (' + html(why) + ')');\n    }\n\n    return lines.length === 0 ? d.problems_none : [d.problems, ...cut(lines)].join('\\n');\n};\n\ncommands.scenes = async () => {\n    const list = await tool('list_scenes');\n    if (list.length === 0) {\n\n        return d.scenes_none;\n    }\n    const lines = list\n        .sort((a, b) => String(a.target_name || a.target).localeCompare(String(b.target_name || b.target), locale))\n        .map(s => (s.enabled ? '▶️ ' : '⏸ ') + html(s.target_name || s.target)\n            + (s.enabled ? '' : ' (' + d.scene_disabled + ')')\n            + (s.last_failure ? ' – ' + fill(d.scene_failure, { 'at': ago(s.last_failure) }) : ''));\n\n    return [d.scenes, ...cut(lines)].join('\\n');\n};\n\ncommands.summary = async () => {\n    const r = await node.linkcall('telegram - summary', { 'lang': lang }, { 'timeout': 60000 });\n\n    return r.text;\n};\n\n// Commands names, english and french\nconst names = {\n    'start': 'help', 'help': 'help', 'aide': 'help',\n    'house': 'house', 'maison': 'house',\n    'rooms': 'rooms', 'pieces': 'rooms',\n    'room': 'room', 'piece': 'room',\n    'search': 'search', 'cherche': 'search', 'chercher': 'search',\n    'problems': 'problems', 'problemes': 'problems',\n    'scenes': 'scenes',\n    'summary': 'summary', 'resume': 'summary'\n};\n\nlet text = String(msg.text || '');\nlet command = '';\nlet arg = text;\nconst m = text.match(/^\\/([A-Za-zÀ-ſ_]+)(@\\S+)?\\s*([\\s\\S]*)$/);\nif (m) {\n    command = names[norm(m[1])] || 'help';\n    arg = m[3].trim();\n} else {\n    // Free text: a room, else a search\n    command = findRoom(text) !== null ? 'room' : 'search';\n}\n\nnode.status({ 'fill': 'blue', 'text': login + ' ' + command });\n\ntry {\n\n    return answer(await commands[command](arg));\n} catch (err) {\n    if (err instanceof Denied) {\n\n        return answer(d.denied);\n    }\n    node.warn('telegram ' + command + ': ' + err.message);\n\n    return answer(d.error);\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 440,
+        "wires": [
+            [
+                "3fc79029d74c9e4f"
+            ]
+        ]
+    },
+    {
+        "id": "0bf539ed566193e7",
+        "type": "group",
+        "z": "fd2a6bc9e0687100",
+        "name": "telegram - message",
+        "style": {
+            "fill": "#0088cc",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "3f2a249fb09b5999"
+        ],
+        "x": 354,
+        "y": 399,
+        "w": 192,
+        "h": 82
+    },
+    {
+        "id": "5b86f016d2a2798b",
+        "type": "inject",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "start",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "20",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 220,
+        "wires": [
+            [
+                "e12f6d44d7d20f14"
+            ]
+        ]
+    },
+    {
+        "id": "e12f6d44d7d20f14",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "start",
+        "func": "/*\nStart the Telegram bot: long polling (getUpdates), outgoing calls only.\nDisabled without DKNR_TELEGRAM_TOKEN. A new loop id stops a previous loop (redeploy).\n*/\nconst token = (env.get('DKNR_TELEGRAM_TOKEN') || '').trim();\nflow.set('token', token);\nflow.set('api', 'https://api.telegram.org/bot');\n\nif (token === '') {\n    flow.set('loop', 0);\n    node.status({ 'fill': 'grey', 'text': 'disabled (no DKNR_TELEGRAM_TOKEN)' });\n\n    return;\n}\n\nconst loop = Date.now();\nflow.set('loop', loop);\nnode.status({ 'fill': 'green', 'text': 'started' });\n\n// Bot commands menu, english by default and french\nconst dict = (lang) => ({ ...(global.get('dictionary.en.telegram') || {}), ...(global.get('dictionary[\"' + lang + '\"].telegram') || {}) });\nconst commands = {\n    'en': ['house', 'rooms', 'room', 'search', 'problems', 'scenes', 'summary', 'help'],\n    'fr': ['maison', 'pieces', 'piece', 'cherche', 'problemes', 'scenes', 'resume', 'aide']\n};\nconst keys = ['cmd_house', 'cmd_rooms', 'cmd_room', 'cmd_search', 'cmd_problems', 'cmd_scenes', 'cmd_summary', 'cmd_help'];\nfor (const lang of ['en', 'fr']) {\n    const d = dict(lang);\n    const body = { 'commands': commands[lang].map((c, i) => ({ 'command': c, 'description': d[keys[i]] || c })) };\n    if (lang !== 'en') {\n        body.language_code = lang;\n    }\n    node.send([null, { 'api': 'setMyCommands', 'body': body }]);\n}\n\nreturn [{ 'loop': loop }, null];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 220,
+        "wires": [
+            [
+                "e879e13e5047e866"
+            ],
+            [
+                "3fc79029d74c9e4f"
+            ]
+        ]
+    },
+    {
+        "id": "e879e13e5047e866",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "poll",
+        "func": "// Wait for updates (long polling, 50 s), only for the current loop\nif (msg.loop !== flow.get('loop') || (flow.get('token') || '') === '') {\n    node.status({ 'fill': 'grey', 'text': 'stopped' });\n\n    return;\n}\n\nconst offset = flow.get('offset', 'file') || 0;\n\nreturn {\n    'loop': msg.loop,\n    'method': 'POST',\n    'url': flow.get('api') + flow.get('token') + '/getUpdates',\n    'headers': { 'Content-Type': 'application/json' },\n    'payload': JSON.stringify({ 'offset': offset, 'timeout': 50, 'allowed_updates': ['message'] }),\n    'requestTimeout': 65000\n};\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 220,
+        "wires": [
+            [
+                "2c512fed257a52ed"
+            ]
+        ]
+    },
+    {
+        "id": "2c512fed257a52ed",
+        "type": "http request",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "getUpdates",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 750,
+        "y": 220,
+        "wires": [
+            [
+                "d43f0a7327b17be4"
+            ]
+        ]
+    },
+    {
+        "id": "d43f0a7327b17be4",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "updates",
+        "func": "/*\nUpdates received: keep the offset, send each text message to \"command\", poll again.\nOutputs: poll now, poll later (error), message.\n*/\nconst loop = msg.loop;\nconst res = typeof msg.payload === 'object' && msg.payload !== null ? msg.payload : {};\n\nif (msg.statusCode !== 200 || res.ok !== true) {\n    // 401: wrong token, 409: another bot instance polls with the same token\n    node.status({ 'fill': 'red', 'text': 'getUpdates ' + msg.statusCode + ' ' + (res.description || '') });\n    if (msg.statusCode === 401 || msg.statusCode === 409) {\n        node.warn('Telegram getUpdates ' + msg.statusCode + ': ' + (res.description || ''));\n    }\n\n    return [null, { 'loop': loop }, null];\n}\n\nlet offset = flow.get('offset', 'file') || 0;\nlet count = 0;\nfor (const u of (Array.isArray(res.result) ? res.result : [])) {\n    if (typeof u.update_id === 'number' && u.update_id >= offset) {\n        offset = u.update_id + 1;\n    }\n    const m = u.message;\n    if (typeof m !== 'object' || m === null || typeof m.chat !== 'object' || typeof m.text !== 'string') {\n\n        continue;\n    }\n    // Old messages (bot stopped for a while) are not answered\n    if (typeof m.date === 'number' && m.date * 1000 < Date.now() - 600000) {\n\n        continue;\n    }\n    count++;\n    node.send([null, null, {\n        'chat': String(m.chat.id),\n        'private': m.chat.type === 'private',\n        'text': m.text.trim(),\n        'lang': typeof (m.from || {}).language_code === 'string' ? m.from.language_code : ''\n    }]);\n}\nflow.set('offset', offset, 'file');\n\nnode.status({ 'fill': 'green', 'text': count > 0 ? count + ' message(s)' : 'waiting' });\n\nreturn [{ 'loop': loop }, null, null];\n",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 220,
+        "wires": [
+            [
+                "e879e13e5047e866"
+            ],
+            [
+                "680d0186d7b7c9fd"
+            ],
+            [
+                "3f2a249fb09b5999"
+            ]
+        ]
+    },
+    {
+        "id": "680d0186d7b7c9fd",
+        "type": "delay",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "30s",
+        "pauseType": "delay",
+        "timeout": "30",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 560,
+        "y": 300,
+        "wires": [
+            [
+                "e879e13e5047e866"
+            ]
+        ]
+    },
+    {
+        "id": "918ca8509db90061",
+        "type": "catch",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "catch poll",
+        "scope": [
+            "e879e13e5047e866",
+            "2c512fed257a52ed",
+            "d43f0a7327b17be4"
+        ],
+        "uncaught": false,
+        "x": 200,
+        "y": 300,
+        "wires": [
+            [
+                "7404de3f942f46a3"
+            ]
+        ]
+    },
+    {
+        "id": "7404de3f942f46a3",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "b5389532319bb77e",
+        "name": "error",
+        "func": "// Request error (network...): poll again later\nnode.status({ 'fill': 'red', 'text': ((msg.error || {}).message || 'error').substring(0, 60) });\n\nreturn { 'loop': msg.loop };\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 300,
+        "wires": [
+            [
+                "680d0186d7b7c9fd"
+            ]
+        ]
+    },
+    {
+        "id": "b5389532319bb77e",
+        "type": "group",
+        "z": "fd2a6bc9e0687100",
+        "name": "telegram - bot",
+        "style": {
+            "fill": "#0088cc",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "5b86f016d2a2798b",
+            "e12f6d44d7d20f14",
+            "e879e13e5047e866",
+            "2c512fed257a52ed",
+            "d43f0a7327b17be4",
+            "680d0186d7b7c9fd",
+            "918ca8509db90061",
+            "7404de3f942f46a3"
+        ],
+        "x": 104,
+        "y": 179,
+        "w": 932,
+        "h": 162
+    },
+    {
+        "id": "6fcb7497749a7124",
+        "type": "inject",
+        "z": "fd2a6bc9e0687100",
+        "g": "0ecc1defec6e4774",
+        "name": "1min",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "300",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 700,
+        "wires": [
+            [
+                "284e8d7a882ffcf6"
+            ]
+        ]
+    },
+    {
+        "id": "284e8d7a882ffcf6",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "0ecc1defec6e4774",
+        "name": "watch",
+        "func": "/*\nEvery minute: send new problems and resolved ones to every linked account, and the daily summary.\nProblems are the list_problems tool ones (silent entities, low batteries, active alerts, scene anomalies).\nKnown problems are kept in the file context: no flood after a restart, nothing sent on the very first run.\nA problem is resolved after being absent for a while (no alert / resolved flapping).\n*/\nif ((flow.get('token') || '') === '' || global.get('boot') === true || global.get('stop') === true) {\n\n    return;\n}\n\n// Absence before \"resolved\", by kind (ms)\nconst RESOLVE = { 'alert': 120000, 'scene': 600000, 'silent': 600000, 'battery': 6 * 3600000 };\nconst MAX_LINES = 30;\n\nconst fill = (t, v) => String(t || '').replace(/\\{(\\w+)\\}/g, (m, k) => v[k] !== undefined ? v[k] : m);\nconst html = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst auth = global.get('auth') || {}; // read\nconst rooms = global.get('room.base') || {};\nconst label = (b) => b.name + (b.room && (rooms[b.room] || {}).name ? ' (' + rooms[b.room].name + ')' : '');\n\n// Linked accounts by lang\nlet langs = {};\nfor (const login in auth) {\n    const id = String((auth[login] || {}).telegram || '').trim();\n    if (/^-?\\d{1,20}$/.test(id)) {\n        langs[id] = auth[login].lang || 'fr';\n    }\n}\n\n// --- Daily summary ---\n\nlet time = String(env.get('DKNR_TELEGRAM_SUMMARY') || '20:00').trim();\nif (time !== 'off') {\n    if (!/^([01]?\\d|2[0-3]):[0-5]\\d$/.test(time)) {\n        time = '20:00';\n    }\n    const now = new Date();\n    const today = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();\n    const [h, m] = time.split(':').map(Number);\n    if (now.getHours() * 60 + now.getMinutes() >= h * 60 + m && flow.get('summary', 'file') !== today) {\n        flow.set('summary', today, 'file');\n        let texts = {};\n        for (const chat in langs) {\n            const lang = langs[chat];\n            if (typeof texts[lang] !== 'string') {\n                const r = await node.linkcall('telegram - summary', { 'lang': lang }, { 'timeout': 60000 });\n                texts[lang] = r.text;\n            }\n            node.send({ 'chat': chat, 'text': texts[lang] });\n        }\n    }\n}\n\n// --- Problems ---\n\nconst r = await node.linkcall('common - house - tool', { 'hmi': { 'login': 'admin' }, 'tool': 'list_problems' }, { 'timeout': 60000 });\nif (typeof r.tool_error === 'string' || typeof r.payload !== 'object' || r.payload === null) {\n    node.status({ 'fill': 'red', 'text': r.tool_error || 'no problems list' });\n\n    return;\n}\nconst p = r.payload;\n\n// Current problems: key => { kind, text, value }\nlet current = {};\nfor (const b of (p.alerts || [])) {\n    current['alert:' + b.uid] = { 'kind': 'alert', 'name': label(b) };\n}\nfor (const b of (p.low_batteries || [])) {\n    current['battery:' + b.uid] = { 'kind': 'battery', 'name': label(b), 'value': b.value };\n}\nfor (const b of (p.silent || [])) {\n    current['silent:' + b.uid] = { 'kind': 'silent', 'name': label(b) };\n}\nfor (const a of (Array.isArray(p.scene_anomalies) ? p.scene_anomalies : [])) {\n    const why = Object.keys(a.reasons || {}).sort().join(',');\n    current['scene:' + a.target + ':' + why] = { 'kind': 'scene', 'name': a.target_name || a.target, 'reasons': a.reasons };\n}\n\nlet known = flow.get('known', 'file');\nconst first = typeof known !== 'object' || known === null;\nif (first) {\n    known = {};\n}\n\nconst now = Date.now();\nlet added = [], resolved = [];\nfor (const k in current) {\n    if (typeof known[k] !== 'object') {\n        added.push(current[k]);\n    }\n    known[k] = { ...current[k], 'absent': 0 };\n}\nfor (const k in known) {\n    if (typeof current[k] === 'object') {\n\n        continue;\n    }\n    if (!known[k].absent) {\n        known[k].absent = now;\n    } else if (now - known[k].absent >= (RESOLVE[known[k].kind] || 600000)) {\n        resolved.push(known[k]);\n        delete known[k];\n    }\n}\nflow.set('known', known, 'file');\n\nnode.status({ 'fill': Object.keys(current).length > 0 ? 'yellow' : 'green', 'text': Object.keys(current).length + ' problem(s), +' + added.length + ' -' + resolved.length + (first ? ' (first run)' : '') });\n\nif (first || (added.length === 0 && resolved.length === 0)) {\n\n    return;\n}\n\n// One message by lang\nconst text = (lang) => {\n    const d = { ...(global.get('dictionary.en.telegram') || {}), ...(global.get('dictionary[\"' + lang + '\"].telegram') || {}) };\n    const line = (x) => {\n        let t = d[x.kind] + d.sep + html(x.name);\n        if (x.kind === 'battery' && x.value !== undefined && x.value !== '') {\n            t += ' (' + x.value + ' %)';\n        }\n        if (x.kind === 'scene' && typeof x.reasons === 'object') {\n            t += ' (' + html(x.reasons.trigger === 'scene without trigger' ? d.scene_no_trigger : Object.keys(x.reasons).map(k => k + d.sep + x.reasons[k]).join(', ')) + ')';\n        }\n\n        return t;\n    };\n    const cut = (list) => list.length > MAX_LINES ? [...list.slice(0, MAX_LINES).map(line), fill(d.more, { 'n': list.length - MAX_LINES })] : list.map(line);\n    let out = [];\n    if (added.length > 0) {\n        out.push(d.watch_new, ...cut(added));\n    }\n    if (resolved.length > 0) {\n        out.push(...(out.length > 0 ? [''] : []), d.watch_resolved, ...cut(resolved));\n    }\n\n    return out.join('\\n');\n};\n\nlet texts = {};\nfor (const chat in langs) {\n    const lang = langs[chat];\n    texts[lang] = texts[lang] || text(lang);\n    node.send({ 'chat': chat, 'text': texts[lang] });\n}\n\nreturn;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 700,
+        "wires": [
+            [
+                "3fc79029d74c9e4f"
+            ]
+        ]
+    },
+    {
+        "id": "0ecc1defec6e4774",
+        "type": "group",
+        "z": "fd2a6bc9e0687100",
+        "name": "telegram - watch",
+        "style": {
+            "fill": "#0088cc",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "6fcb7497749a7124",
+            "284e8d7a882ffcf6"
+        ],
+        "x": 104,
+        "y": 659,
+        "w": 442,
+        "h": 82
+    },
+    {
+        "id": "a4b7f8a593c47664",
+        "type": "link in",
+        "z": "fd2a6bc9e0687100",
+        "g": "b105334444b20282",
+        "name": "telegram - summary",
+        "links": [],
+        "x": 145,
+        "y": 800,
+        "wires": [
+            [
+                "5ae2155dc492c0dd"
+            ]
+        ]
+    },
+    {
+        "id": "5ae2155dc492c0dd",
+        "type": "function",
+        "z": "fd2a6bc9e0687100",
+        "g": "b105334444b20282",
+        "name": "summary",
+        "func": "/*\nDaily summary text (HTML) in msg.lang: outdoor temperatures, energy of the day, things to check.\nCalled by \"telegram - watch\" (DKNR_TELEGRAM_SUMMARY time) and by the /summary command.\n*/\nconst lang = typeof msg.lang === 'string' && msg.lang !== '' ? msg.lang : 'fr';\nconst d = { ...(global.get('dictionary.en.telegram') || {}), ...(global.get('dictionary[\"' + lang + '\"].telegram') || {}) };\nconst dictionary = { ...(global.get('dictionary.en') || {}), ...(global.get('dictionary[\"' + lang + '\"]') || {}) };\nconst locale = (dictionary.common || {}).locales || 'fr';\nconst fill = (t, v) => String(t || '').replace(/\\{(\\w+)\\}/g, (m, k) => v[k] !== undefined ? v[k] : m);\nconst html = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst number = (v, dec) => {\n    const n = Number(v);\n\n    return isNaN(n) ? '-' : n.toLocaleString(locale, { 'maximumFractionDigits': dec ?? 1 });\n};\n\nconst entities = global.get('entity') || {};\nconst blocks = global.get('block') || {};\nconst rooms = global.get('room.base') || {};\nconst outdoor = (id) => Number((rooms[id] || {}).outdoor) === 1 || (rooms[id] || {}).outdoor === true;\nconst name = (uid) => {\n    const e = entities[uid] || {};\n    const room = (rooms[e.room] || {}).name || '';\n    const n = e.name && e.name !== e.id ? e.name : uid;\n\n    return room !== '' && room !== n ? n + ' (' + room + ')' : n;\n};\n\nlet out = [fill(d.summary, { 'date': new Date().toLocaleDateString(locale, { 'weekday': 'long', 'day': 'numeric', 'month': 'long' }) })];\n\n// --- Outdoor temperatures: min / max of today ---\n\nconst sensors = Object.keys(entities).filter(uid => {\n    const e = entities[uid];\n\n    return e.element === 'temperature' && e.hidden === 0 && blocks[uid] !== true && outdoor(e.room) && /^[A-Za-z0-9_\\-./]+$/.test(uid);\n}).sort();\n\nlet temps = [];\nif (sensors.length > 0) {\n    const midnight = new Date();\n    midnight.setHours(0, 0, 0, 0);\n    const query = (fn) => ({\n        'query':\n            'from(bucket: \"domotic\")' +\n            '|> range(start: ' + midnight.toISOString() + ', stop: now())' +\n            '|> filter(fn: (r) => ' + sensors.map(u => 'r[\"_field\"] == \"' + u + '\"').join(' or ') + ')' +\n            '|> toFloat()' +\n            '|> ' + fn + '()' +\n            '|> yield(name: \"' + fn + '\")',\n        'payload': ''\n    });\n    let values = {};\n    for (const fn of ['min', 'max']) {\n        try {\n            const r = await node.linkcall('common - house - influxdb', query(fn), { 'timeout': 20000 });\n            for (const row of (Array.isArray(r.payload) ? r.payload : [])) {\n                values[row._field] = values[row._field] || {};\n                values[row._field][fn] = row._value;\n            }\n        } catch (err) {\n            node.warn('summary ' + fn + ': ' + err.message);\n        }\n    }\n    for (const uid of sensors) {\n        if (typeof values[uid] === 'object') {\n            temps.push(fill(d.summary_minmax, { 'name': html(name(uid)), 'min': number(values[uid].min), 'max': number(values[uid].max), 'now': number(entities[uid].value) }));\n        }\n    }\n}\n\n// Tomorrow forecast (OpenWeatherMap, when set in the Energy page)\nconst weather = global.get('weather') || [];\nlet tomorrow = new Date();\ntomorrow.setHours(0, 0, 0, 0);\ntomorrow.setDate(tomorrow.getDate() + 1);\nconst from = tomorrow.getTime();\nconst forecast = (Array.isArray(weather) ? weather : []).filter(w => w.ts >= from && w.ts < from + 86400000).map(w => Number(w.temperature)).filter(v => !isNaN(v));\nif (forecast.length > 0) {\n    temps.push(fill(d.summary_tomorrow, { 'min': number(Math.min(...forecast), 0), 'max': number(Math.max(...forecast), 0) }));\n}\n\nif (temps.length > 0) {\n    out.push('', d.summary_outdoor, ...temps);\n}\n\n// --- Energy of the day (same as the Energy page summary, today column) ---\n\ntry {\n    const r = await node.linkcall('common - energy - day', { 'dictionary': dictionary, 'payload': [] }, { 'timeout': 30000 });\n    const e = typeof r.payload === 'object' && r.payload !== null ? r.payload : {};\n    const lines = (Array.isArray(e.lines) ? e.lines : []).filter(l => Array.isArray(l.values) && typeof l.values[1] === 'number');\n    if (lines.length > 0) {\n        out.push('', d.summary_energy, ...lines.map(l => html(l.label) + d.sep + number(l.values[1], 2) + ' ' + (e.unit || 'kWh')));\n        if (Array.isArray(e.ratio) && e.ratio[1] !== null && e.ratio[1] !== undefined) {\n            out.push(fill(d.summary_ratio, { 'n': e.ratio[1] }));\n        }\n    }\n} catch (err) {\n    node.warn('summary energy: ' + err.message);\n}\n\n// --- Things to check (as admin: alerts are for every linked account) ---\n\ntry {\n    const r = await node.linkcall('common - house - tool', { 'hmi': { 'login': 'admin' }, 'tool': 'list_problems' }, { 'timeout': 60000 });\n    const p = r.payload || {};\n    let lines = [];\n    for (const b of (p.alerts || [])) {\n        lines.push(d.alert + d.sep + html(name(b.uid)));\n    }\n    for (const b of (p.low_batteries || [])) {\n        lines.push(d.battery + d.sep + html(name(b.uid)) + ' (' + number(b.value, 0) + ' %)');\n    }\n    for (const b of (p.silent || [])) {\n        lines.push(d.silent + d.sep + html(name(b.uid)));\n    }\n    for (const a of (Array.isArray(p.scene_anomalies) ? p.scene_anomalies : [])) {\n        lines.push(d.scene + d.sep + html(a.target_name || a.target));\n    }\n    if (lines.length > 30) {\n        lines = [...lines.slice(0, 30), fill(d.more, { 'n': lines.length - 30 })];\n    }\n    out.push('', ...(lines.length > 0 ? [d.summary_problems, ...lines] : [d.summary_ok]));\n} catch (err) {\n    node.warn('summary problems: ' + err.message);\n}\n\nmsg.text = out.join('\\n');\nnode.status({ 'text': lang + ' ' + new Date().toLocaleTimeString(locale) });\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 800,
+        "wires": [
+            [
+                "75dca15d08902033"
+            ]
+        ]
+    },
+    {
+        "id": "75dca15d08902033",
+        "type": "link out",
+        "z": "fd2a6bc9e0687100",
+        "g": "b105334444b20282",
+        "name": "telegram - summary",
+        "mode": "return",
+        "links": [],
+        "x": 755,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "b105334444b20282",
+        "type": "group",
+        "z": "fd2a6bc9e0687100",
+        "name": "telegram - summary",
+        "style": {
+            "fill": "#0088cc",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "a4b7f8a593c47664",
+            "5ae2155dc492c0dd",
+            "75dca15d08902033"
+        ],
+        "x": 49,
+        "y": 759,
+        "w": 802,
+        "h": 82
     }
 ]
