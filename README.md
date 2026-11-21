@@ -149,6 +149,8 @@ Mise en place :
 
 La recopie a lieu une minute après le démarrage puis toutes les 5 minutes, et n'envoie que les différences. Elle ne touche qu'aux entités dont l'identifiant unique commence par `dknr_` (celles des sources DKNR) : DKNR Domotic garde la main sur leur zone, leur nom, leur masquage et leurs étiquettes d'élément. Les scènes restent dans DKNR Domotic.
 
+Quand une source a changé le type d'une entité, Home Assistant garde l'ancienne entité (indisponible) à côté de la nouvelle : DKNR Domotic ne recopie que celle qui fonctionne et masque les autres. Vous pouvez supprimer ces anciennes entités dans Home Assistant.
+
 
 ## A faire
 

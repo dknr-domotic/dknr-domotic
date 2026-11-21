@@ -256,13 +256,14 @@ Miroir de l'installation dans Home Assistant, onglet `homeassistant` (nœud `mir
 * Chaque source dknr-xxx publie sa propre discovery Home Assistant (`homeassistant/<type>/<source>/<parent>_<entité>/config`, `unique_id` = `dknr_<source>_<parent>_<entité>`), pour rester utilisable avec Home Assistant sans dknr-domotic. dknr-domotic **ne publie rien** sur `homeassistant/` : deux éditeurs retenus sur les mêmes topics donneraient des doublons ou des bascules.
 * dknr-domotic passe par l'**API WebSocket** de Home Assistant (`/api/websocket`) et retrouve chaque entité par son `unique_id` (uid DKNR, `/` remplacé par `_`, plateforme `mqtt`). Les entités sans discovery Home Assistant dans leur source (source `dknr`, types non déclarés) sont ignorées.
 * Recopié : zone = pièce (zone cherchée par nom, sans casse, créée si absente ; préfixe `> ` retiré), nom (nom DKNR, vide = nom d'origine), masquage (`hidden_by: user` si l'entité est cachée ou bloquée ; démasquée seulement si le masquage vient de `user`, jamais de `disabled_by`), étiquette de l'élément (libellé `option_element` dans la langue du compte `admin`, créée si absente). Les étiquettes dont le nom est celui d'un élément sont gérées par dknr-domotic, les autres étiquettes de l'entité sont conservées.
+* Doublons : un `unique_id` n'est unique que par type d'entité ; quand une source a changé le type d'une entité, l'ancienne reste dans Home Assistant (indisponible) à côté de la nouvelle. Pour un même uid, seule l'entité qui a un état (pas `unavailable`), la plus récemment modifiée d'abord, est recopiée ; les autres sont masquées, sans zone ni étiquette d'élément (compteur `duplicates`). Les supprimer reste à faire à la main dans Home Assistant, et sur le broker s'il en garde l'ancien topic de config retenu.
 * Seules les différences sont envoyées (`config/entity_registry/update`, par lots de 20). Rien n'est jamais supprimé, ni zone, ni étiquette, ni entité.
 
 ### Réglages et fonctionnement
 
 * `DKNR_HA_URL` (`http://<ip>:8123`, `ws://` accepté) et `DKNR_HA_TOKEN` (jeton longue durée) ; l'un des deux vide = désactivé.
 * WebSocket natif de Node.js, donné aux fonctions par `functionGlobalContext` (`data/settings.js`) : aucune dépendance npm.
-* Inject 60 s après le démarrage puis toutes les 5 minutes ; un seul passage à la fois (`running` dans le contexte du nœud). Résultat dans le statut du nœud, dans les logs quand quelque chose change, et dans le contexte flow `homeassistant` (`matched`, `updated`, `areas_created`, `labels_created`, `errors`, `error`).
+* Inject 60 s après le démarrage puis toutes les 5 minutes ; un seul passage à la fois (`running` dans le contexte du nœud). Résultat dans le statut du nœud, dans les logs quand quelque chose change, et dans le contexte flow `homeassistant` (`matched`, `duplicates`, `updated`, `areas_created`, `labels_created`, `errors`, `error`).
 * Les noms : les entités MQTT de Home Assistant ont `has_entity_name`, le nom affiché peut donc être précédé du nom de l'appareil de la source selon la carte.
 
 
