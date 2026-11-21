@@ -99,6 +99,16 @@ Avec le topic `dknr` par défaut :
 DKNR Domotic est lui-même la source `dknr` : ses modes et capteurs internes sont publiés et pilotés par les mêmes topics (ex : `dknr/set/dknr/command/light` avec `auto`, `high`, `low` ou `manual`).
 
 
+## Assistant (MCP)
+
+DKNR Domotic expose un serveur [MCP](https://modelcontextprotocol.io) en lecture seule sur `http://<ip du serveur docker>:1880/mcp`, pour qu'un assistant comme Claude lise l'installation : pièces, entités, historique, scènes et le détail de leur dernier échec, entités muettes et alertes. Il ne pilote rien.
+
+1. Connectez-vous au tableau de bord (niveau parent ou administrateur), page **Authentification**, et cliquez sur **Nouvelle clé MCP**. Copiez la clé : elle n'est affichée qu'une fois. **Retirer la clé** la désactive aussitôt.
+2. Déclarez le serveur dans votre client MCP avec la clé dans l'en-tête `x-api-key` (ou `Authorization: Bearer <clé>`). Par exemple avec Claude Code : `claude mcp add --transport http dknr http://<ip>:1880/mcp --header "x-api-key: <clé>"`.
+
+La clé donne les droits de son utilisateur, ni plus ni moins. Le serveur est fait pour le réseau local : ne l'ouvrez pas vers internet sans proxy HTTPS.
+
+
 ## A faire
 
 * Délestage des thermostats quand la puissance dépasse l'abonnement électrique.
