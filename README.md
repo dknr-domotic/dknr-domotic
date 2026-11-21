@@ -67,7 +67,7 @@ Dans la page **Configuration** :
 
 ### Pièces et entités
 
-1. Créez les pièces dans la page **Configuration** : l'identifiant ne contient que des lettres minuscules, des chiffres et `_` (ex : `salle_de_bain`), et ne change plus ensuite ; le nom accepte les lettres accentuées, les chiffres, les espaces et `- ' . ( )`. Cochez *Extérieur* pour les pièces dont les sondes donnent la température extérieure, puis placez-les sur le plan depuis la page **Pièces**.
+1. Créez les pièces dans la page **Configuration** : l'identifiant ne contient que des lettres minuscules, des chiffres et `_` (ex : `salle_de_bain`), et ne change plus ensuite ; le nom accepte les lettres accentuées, les chiffres, les espaces et `- ' . ( )`. Placez-les ensuite sur le plan depuis la page **Pièces**.
 2. Dans la page **Entités**, choisissez une source puis, pour chaque entité utile, donnez-lui une pièce et un élément (lumière, volet, porte, température...). Une nouvelle entité est cachée tant qu'elle n'est pas configurée.
 3. Dans la page **Pièces**, renseignez les jours travaillés et les heures de confort de chaque pièce (utilisés par le chauffage et les scènes).
 4. Dans la page **Energie**, choisissez les entités de puissance, de batterie, de compteurs et de tarif.
@@ -85,7 +85,7 @@ Une scène pilote une entité cible (lumière, volet, serrure, chauffe-eau, ther
 * **Humidité**, **veilleuse**, **tarif** favorable, **puissance** consommée (arrêt quand l'appareil ne consomme plus).
 * **Quotidien** : une seule fois par jour.
 * **Durée** : arrêt automatique après un délai, aussi après un allumage manuel.
-* **Thermostat** : consigne confort, éco ou hors gel, sondes intérieures et extérieures, durée de chauffe calculée, arrêt fenêtre ouverte, refroidissement sur énergie solaire.
+* **Thermostat** : consigne confort, éco ou hors gel, sondes intérieures (déclencheurs de la scène) et température extérieure (une ou deux sondes choisies dans la page **Energie**, menu Entités), durée de chauffe calculée, arrêt fenêtre ouverte, refroidissement sur énergie solaire.
 
 Les modes de la source `dknr` (ex : `dknr/sensor/nycthemer` pour le jour / la nuit) peuvent servir de déclencheurs.
 
@@ -125,7 +125,7 @@ Un compte lié reçoit tout : les alertes et le résumé journalier. Les questio
 
 * Commandes : `/maison`, `/pieces`, `/piece nom`, `/cherche texte`, `/problemes`, `/scenes`, `/resume` (en anglais : `/house`, `/rooms`, `/room`, `/search`, `/problems`, `/scenes`, `/summary`). Un nom de pièce ou un texte sans commande marche aussi.
 * Alertes : entités muettes, piles faibles, alertes actives (dont les défauts des sources), scènes en erreur. Un message quand un problème apparaît, un autre quand il est résolu.
-* Résumé journalier : températures extérieures du jour, prévision du lendemain, énergie du jour et ce qui reste à vérifier.
+* Résumé journalier : températures du jour des sondes extérieures choisies dans la page **Energie**, prévision du lendemain, énergie du jour et ce qui reste à vérifier.
 
 Un seul conteneur doit utiliser un même jeton : un second conteneur (de test par exemple) a besoin de son propre bot.
 

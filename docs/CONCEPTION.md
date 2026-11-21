@@ -37,9 +37,9 @@ Données persistées (export / import sélectif depuis la page Configuration : a
 | `entity` | entités par identifiant `source/parent/id` |
 | `discovery` | dernière discovery reçue par entité |
 | `source`, `parent` | sources et appareils déclarés |
-| `room` | `base` (pièces : id, nom, `outdoor` 1/0), `confort` (plages par pièce), `workday` (jours `d0`..`d6` à 1/0 par pièce), `location`, `map`, `camera` |
+| `room` | `base` (pièces : id, nom, `outdoor` 1/0, plus utilisé par les traitements pour le moment), `confort` (plages par pièce), `workday` (jours `d0`..`d6` à 1/0 par pièce), `location`, `map`, `camera` |
 | `scene` | scènes par entité cible |
-| `energy` | entités choisies pour l'énergie (puissances, batterie, compteurs, `preferred_tariff`...) |
+| `energy` | entités choisies pour l'énergie (puissances, batterie, compteurs, `preferred_tariff`...) et sondes de température extérieure (`outdoor_temperature`, `outdoor_temperature_2`) |
 | `calendar`, `user`, `auth`, `mqtt`, `block` | calendrier, sessions des utilisateurs, comptes (rechargés depuis `user.json`), configuration MQTT, entités bloquées |
 
 Données de fonctionnement : `describe` (templates, éléments, routines par élément, unités textuelles, enums de la source dknr, pages, niveaux d'accès `describe.access`), `dictionary`, `form` (formulaires par onglet, clé `msg.hmi.id`), `stop`, `boot`, `sourceboot` (heure de démarrage annoncée par chaque source).
@@ -113,7 +113,7 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 * **power** : arrêt si la puissance reste sous le seuil bas 10 s (sur une copie du message).
 * **daily** : une fois par jour, marquée seulement quand la commande part réellement (`rsp`) ; remise à zéro chaque matin à 8h et depuis la page Configuration.
 * **duration** : minuteur à l'allumage (par scène ou à la main), extinction par le cron à expiration, minuteur arrêté à l'extinction.
-* **thermostat** : sondes intérieures (pièces non extérieures, `outdoor` 1 ou `true`) et extérieures, consigne confort / éco / hors gel, durée de chauffe calculée par cycle, arrêt fenêtre ouverte, froid sur énergie solaire ; il n'écrit que ses champs `temperature_*` dans la scène ; réévalué chaque minute par le cron.
+* **thermostat** : sondes intérieures (déclencheurs `temperature` de la scène, sauf les sondes extérieures) et température extérieure (moyenne des sondes `outdoor_temperature` et `outdoor_temperature_2` de la page Energie, une seule suffit), consigne confort / éco / hors gel, durée de chauffe calculée par cycle, arrêt fenêtre ouverte, froid sur énergie solaire ; il n'écrit que ses champs `temperature_*` dans la scène ; réévalué chaque minute par le cron.
 * **cron** (chaque minute) : minuteurs expirés (la cible sert de déclencheur avec la valeur `off`) et thermostats.
 * Les routines liées à l'heure (nocturnal, diurnal, confort, eco, nightlight) ne se réévaluent que sur un déclencheur : ajouter `dknr/sensor/nycthemer` comme déclencheur pour suivre le jour / la nuit.
 
@@ -232,7 +232,7 @@ Bot Telegram dans l'onglet `telegram` : questions sur la maison (lecture seule),
 * `telegram - message` : `command`. Commandes anglaises et françaises (`/house` `/maison`, `/rooms` `/pieces`, `/room` `/piece`, `/search` `/cherche`, `/problems` `/problemes`, `/scenes`, `/summary` `/resume`, `/help` `/aide`) ; un texte sans commande est une pièce (nom ou identifiant, sans casse ni accents) ou à défaut une recherche. Valeurs affichées comme dans les pièces (allumé / éteint, ouvert / fermé, options des enum). 60 lignes au plus.
 * `telegram - send` : `msg.chat` (ou `all` : tous les comptes liés) et `msg.text` en HTML, coupé en messages de 4000 caractères, 1 message par seconde ; `msg.api` et `msg.body` pour un autre appel.
 * `telegram - watch` (chaque minute, 5 minutes après le démarrage) : résumé à l'heure prévue (une fois par jour, date gardée dans le contexte `file`) et alertes.
-* `telegram - summary` (link call, `msg.lang` → `msg.text`) : températures min / max du jour des sondes des pièces extérieures (InfluxDB ; sans les températures de matériel : appareil qui mesure aussi puissance, énergie, courant ou tension, comme un onduleur), prévision du lendemain (OpenWeatherMap, si réglé), énergie du jour (`common - energy - day`, colonne aujourd'hui, autosuffisance) et ce qui reste à vérifier.
+* `telegram - summary` (link call, `msg.lang` → `msg.text`) : températures min / max du jour des sondes extérieures choisies dans la page Energie (InfluxDB), prévision du lendemain (OpenWeatherMap, si réglé), énergie du jour (`common - energy - day`, colonne aujourd'hui, autosuffisance) et ce qui reste à vérifier.
 
 ### Alertes
 
