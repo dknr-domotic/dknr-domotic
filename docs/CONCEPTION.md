@@ -192,13 +192,13 @@ dknr-domotic expose un serveur [MCP](https://modelcontextprotocol.io) pour qu'un
 
 | Outil | Contenu | Clé d'accès |
 |---|---|---|
-| `get_house` | version, nombres de pièces / entités / scènes, modes et capteurs de la source `dknr` | `room.view` |
+| `get_house` | version, nombres de pièces / entités / scènes, modes et capteurs de la source `dknr` (sans la latitude ni la longitude : position de la maison, jamais envoyée) | `room.view` |
 | `list_rooms` | pièces (id, nom, extérieure, nombre d'entités visibles) | `room.view` |
 | `list_sources` | sources (discovery, démarrage annoncé), nombre d'appareils et d'entités | `room.view` |
 | `list_entities` | filtres pièce, source, élément, texte ; entités cachées ou bloquées avec `include_hidden` | `room.view` (+ `entity.view` pour les cachées) |
 | `get_entity` | entité, discovery, options, scènes qui la pilotent ou qu'elle déclenche | `room.view` (+ `entity.view` si cachée) |
 | `get_history` | valeurs InfluxDB des dernières heures (1 à 168) | `room.view` |
-| `list_problems` | entités muettes (règle de la page des pièces : 48 h, 1 h pour une puissance non nulle hors commande), alertes actives, scènes avec un échec récent | `room.view` (scènes : `scene.view`) |
+| `list_problems` | entités muettes (règle de la page des pièces : 48 h, 1 h pour une puissance non nulle hors commande ; sans les télécommandes, qui ne publient qu'à l'appui), batteries à 15 % ou moins, alertes actives, anomalies de scène : dernier passage arrêté sur « not found », « error » ou « invalid », scène sans déclencheur. Les arrêts normaux (valeur inchangée, pas de sortie pour cette entrée, thermostat atteint, scène désactivée) n'y sont pas : le résumé garde chaque passage qui n'envoie rien | `room.view` (scènes : `scene.view`) |
 | `list_scenes` | scènes (cible, activée, routines actives, déclencheurs, échec gardé) | `scene.view` |
 | `get_scene` | scène complète, déclencheurs avec nom et valeur, dernier échec, dernier ordre réussi | `scene.view` |
 
