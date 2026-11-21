@@ -105,7 +105,7 @@ Chaque routine lit `msg.rsp`, se court-circuite (« skip by response / exclusion
 * **loop** : un message par scène utilisant le déclencheur. Les valeurs répétées numériques ne déclenchent pas, les répétitions binaires et textuelles oui (rétention de mouvement, double appui de télécommande). Pendant 60 s après le démarrage annoncé d'une source, ses valeurs répétées ne déclenchent pas. Quand un mode `dknr/command/<x>` change, les scènes déclenchées par `dknr/sensor/<x>` sont rejouées 3 s plus tard. Une cible changée à la main sans être son propre déclencheur ne fait que démarrer / arrêter le minuteur de durée.
 * **Files** : volets 30 s (attente de la position finale), cible = déclencheur par cible, autres 5 / s. La limite finale garde la dernière commande **par cible** (aucune cible n'est perdue).
 * **trigger** relit la scène et la cible après les files (pas de décision sur des valeurs périmées) et calcule une fois les heures de confort de la pièce (`msg.confort`, plages et jours travaillés, plage à cheval sur minuit acceptée).
-* **level** compare valeurs et seuils sans tenir compte du type (`1` = `'1'`), heures en `hhmm`, comparaison textuelle si non numérique, seuils inversés acceptés, entre les deux seuils : rien (hystérésis).
+* **level** compare valeurs et seuils sans tenir compte du type (`1` = `'1'`), heures en `hhmm`, comparaison textuelle si non numérique, seuils inversés acceptés, entre les deux seuils : rien (hystérésis, résumé « input between low and high levels »).
 * **manual** arrête si `dknr/sensor/<élément>` vaut `manual`.
 * **aperture** : arrête si une ouverture déclencheur est ouverte (convention `1` = ouvert, `rb` inversé) ; l'ordre bloqué est gardé dans `scene.pending` et rejoué quand la dernière ouverture se ferme ; il est effacé dès qu'un ordre passe.
 * **motion** déclenche l'état haut sur mouvement ; **retention** ne relance le minuteur que si la cible est déjà haute.
@@ -192,13 +192,13 @@ dknr-domotic expose un serveur [MCP](https://modelcontextprotocol.io) pour qu'un
 
 | Outil | Contenu | Clé d'accès |
 |---|---|---|
-| `get_house` | version, nombres de pièces / entités / scènes, modes et capteurs de la source `dknr` | `room.view` |
+| `get_house` | version, nombres de pièces / entités / scènes, modes et capteurs de la source `dknr` (sans la latitude ni la longitude : position de la maison, jamais envoyée) | `room.view` |
 | `list_rooms` | pièces (id, nom, extérieure, nombre d'entités visibles) | `room.view` |
 | `list_sources` | sources (discovery, démarrage annoncé), nombre d'appareils et d'entités | `room.view` |
 | `list_entities` | filtres pièce, source, élément, texte ; entités cachées ou bloquées avec `include_hidden` | `room.view` (+ `entity.view` pour les cachées) |
 | `get_entity` | entité, discovery, options, scènes qui la pilotent ou qu'elle déclenche | `room.view` (+ `entity.view` si cachée) |
-| `get_history` | valeurs InfluxDB des dernières heures (1 à 168) | `room.view` |
-| `list_problems` | entités muettes (règle de la page des pièces : 48 h, 1 h pour une puissance non nulle hors commande), alertes actives, scènes avec un échec récent | `room.view` (scènes : `scene.view`) |
+| `get_history` | valeurs InfluxDB des dernières heures (1 à 168), agrégées, ou chaque changement avec `raw` (500 au plus) | `room.view` |
+| `list_problems` | entités muettes (règle de la page des pièces : 48 h, 1 h pour une puissance non nulle hors commande ; sans les télécommandes, qui ne publient qu'à l'appui), batteries à 15 % ou moins (sans la source de la batterie choisie dans la page Energie : stockage domestique, pas une pile), alertes actives, anomalies de scène : dernier passage arrêté sur « not found », « error » ou « invalid », scène sans déclencheur. Les arrêts normaux (valeur inchangée, entrée entre les deux seuils, pas de sortie pour cette entrée, pas de mode `dknr` pour l'élément, thermostat atteint, scène désactivée) n'y sont pas : le résumé garde chaque passage qui n'envoie rien | `room.view` (scènes : `scene.view`) |
 | `list_scenes` | scènes (cible, activée, routines actives, déclencheurs, échec gardé) | `scene.view` |
 | `get_scene` | scène complète, déclencheurs avec nom et valeur, dernier échec, dernier ordre réussi | `scene.view` |
 
