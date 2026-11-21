@@ -232,7 +232,7 @@ Bot Telegram dans l'onglet `telegram` : questions sur la maison (lecture seule),
 * `telegram - message` : `command`. Commandes anglaises et françaises (`/house` `/maison`, `/rooms` `/pieces`, `/room` `/piece`, `/search` `/cherche`, `/problems` `/problemes`, `/scenes`, `/summary` `/resume`, `/help` `/aide`) ; un texte sans commande est une pièce (nom ou identifiant, sans casse ni accents) ou à défaut une recherche. Valeurs affichées comme dans les pièces (allumé / éteint, ouvert / fermé, options des enum). 60 lignes au plus.
 * `telegram - send` : `msg.chat` (ou `all` : tous les comptes liés) et `msg.text` en HTML, coupé en messages de 4000 caractères, 1 message par seconde ; `msg.api` et `msg.body` pour un autre appel.
 * `telegram - watch` (chaque minute, 5 minutes après le démarrage) : résumé à l'heure prévue (une fois par jour, date gardée dans le contexte `file`) et alertes.
-* `telegram - summary` (link call, `msg.lang` → `msg.text`) : températures min / max du jour des sondes des pièces extérieures (InfluxDB), prévision du lendemain (OpenWeatherMap, si réglé), énergie du jour (`common - energy - day`, colonne aujourd'hui, autosuffisance) et ce qui reste à vérifier.
+* `telegram - summary` (link call, `msg.lang` → `msg.text`) : températures min / max du jour des sondes des pièces extérieures (InfluxDB ; sans les températures de matériel : appareil qui mesure aussi puissance, énergie, courant ou tension, comme un onduleur), prévision du lendemain (OpenWeatherMap, si réglé), énergie du jour (`common - energy - day`, colonne aujourd'hui, autosuffisance) et ce qui reste à vérifier.
 
 ### Alertes
 
