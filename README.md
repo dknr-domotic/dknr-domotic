@@ -25,6 +25,7 @@ La documentation détaillée est sur [dknr-domotic.github.io](https://dknr-domot
 - **Modes de la maison** (source interne `dknr`) : automatisme général, jour / nuit, lumières, volets, chauffe-eau, chauffage, ventilation, son, en automatique, forcés ou manuels.
 - **Utilisateurs** avec niveau d'accès et langue (français, anglais), session conservée au rafraîchissement de la page et au redémarrage (durée réglable : 6 h, 24 h ou 30 jours), liste des comptes pour déconnecter ou supprimer un utilisateur (administrateur et parent).
 - **Telegram** : questions sur la maison depuis Telegram, alertes (nouveau problème, problème résolu) et résumé journalier.
+- **Home Assistant** : recopie des pièces, des noms, du masquage et des éléments dans Home Assistant, pour les entités que les sources DKNR y déclarent déjà.
 - **Historique** des valeurs dans InfluxDB.
 - **Sauvegarde et restauration** de la configuration, en choisissant les données à exporter.
 
@@ -50,6 +51,8 @@ Le fichier docker-compose.yaml à la racine du dépôt lance **InfluxDB** et **D
 * **DKNR_TELEGRAM_TOKEN** (facultatif) : jeton du bot Telegram. Sans lui, Telegram est désactivé.
 * **DKNR_TELEGRAM_ID** (facultatif) : numéro de chat Telegram du compte `admin`.
 * **DKNR_TELEGRAM_SUMMARY** (facultatif) : heure du résumé journalier, `20:00` par défaut, `off` pour ne pas l'envoyer.
+* **DKNR_HA_URL** (facultatif) : adresse de Home Assistant, ex. `http://192.168.1.10:8123`. Sans elle, le miroir Home Assistant est désactivé.
+* **DKNR_HA_TOKEN** (facultatif) : jeton d'accès longue durée de Home Assistant. Sans lui, le miroir Home Assistant est désactivé.
 
 Le mot de passe du compte `admin` du tableau de bord ne se change pas dans l'interface : il est appliqué à chaque démarrage depuis ces variables. Pour le changer, modifiez la variable et redémarrez le conteneur.
 
@@ -128,6 +131,23 @@ Un compte lié reçoit tout : les alertes et le résumé journalier. Les questio
 * Résumé journalier : températures du jour des sondes extérieures choisies dans la page **Energie**, prévision du lendemain, énergie du jour et ce qui reste à vérifier.
 
 Un seul conteneur doit utiliser un même jeton : un second conteneur (de test par exemple) a besoin de son propre bot.
+
+
+## Home Assistant
+
+Les sources DKNR (dknr-zigbee, dknr-zwave, dknr-rfxcom...) déclarent elles-mêmes leurs entités à Home Assistant par la discovery MQTT : elles s'utilisent aussi avec Home Assistant sans DKNR Domotic. DKNR Domotic ne publie rien de plus sur MQTT, il n'y a donc pas de doublon. Il range les entités déjà déclarées dans Home Assistant comme dans le tableau de bord, par l'API WebSocket de Home Assistant :
+
+* **zone** : la pièce de l'entité (les zones manquantes sont créées, `> Home` devient `Home`) ;
+* **nom** : le nom donné dans DKNR Domotic ;
+* **masquage** : une entité cachée ou bloquée dans DKNR Domotic est masquée dans Home Assistant (pas désactivée ni supprimée) ;
+* **étiquette** : une étiquette par élément (Lumière, Volet, Température...), dans la langue du compte `admin`. Les autres étiquettes de l'entité sont conservées.
+
+Mise en place :
+
+1. Dans Home Assistant, page de votre profil, onglet **Sécurité**, créez un **jeton d'accès longue durée**.
+2. Mettez l'adresse de Home Assistant dans **DKNR_HA_URL** et le jeton dans **DKNR_HA_TOKEN**, puis redémarrez le conteneur.
+
+La recopie a lieu une minute après le démarrage puis toutes les 5 minutes, et n'envoie que les différences. Elle ne touche qu'aux entités dont l'identifiant unique commence par `dknr_` (celles des sources DKNR) : DKNR Domotic garde la main sur leur zone, leur nom, leur masquage et leurs étiquettes d'élément. Les scènes restent dans DKNR Domotic.
 
 
 ## A faire

@@ -19,7 +19,7 @@ dknr-domotic est le tableau de bord et le cerveau des projets DKNR : il lit les 
 
 ## Organisation du flow
 
-Onglets : `common` (logique partagée), `home`, `energy`, `calendar`, `room`, `scene`, `entity`, `config`, `auth`, `mcp` (serveur MCP), `telegram` (bot Telegram), voir plus bas.
+Onglets : `common` (logique partagée), `home`, `energy`, `calendar`, `room`, `scene`, `entity`, `config`, `auth`, `mcp` (serveur MCP), `telegram` (bot Telegram), `homeassistant` (miroir Home Assistant), voir plus bas.
 
 * Les traitements partagés sont des groupes `common - ...` appelés par **link call** (`await node.linkcall('common - ...', msg)`) : `common - entity - merge`, `common - entity - set`, `common - entity - get`, `common - scene`, `common - influxdb`, `common - energy`, `common - energy - day` (énergie d'hier et d'aujourd'hui : résumé de la page Energie et de Telegram), `common - house - tool` (outils de lecture du MCP et de Telegram), `common - house - influxdb`, `common - weather`, `common - dknr - ...`, `common - mqtt - publish`, `common - room - mqtt`, `common - ui - ...` (hmi, notice, enable, group, tab, control, latency), `common - user - ...`, `common - register - page`, `common - register - dictionary`.
 * Chaque page s'enregistre (`describe.page`) et enregistre ses textes (`dictionary`, français et anglais).
@@ -247,9 +247,28 @@ Bot Telegram dans l'onglet `telegram` : questions sur la maison (lecture seule),
 * Evénements du calendrier du lendemain (poubelles, anniversaires) dans le résumé.
 
 
+## Home Assistant
+
+Miroir de l'installation dans Home Assistant, onglet `homeassistant` (nœud `mirror`).
+
+### Principe
+
+* Chaque source dknr-xxx publie sa propre discovery Home Assistant (`homeassistant/<type>/<source>/<parent>_<entité>/config`, `unique_id` = `dknr_<source>_<parent>_<entité>`), pour rester utilisable avec Home Assistant sans dknr-domotic. dknr-domotic **ne publie rien** sur `homeassistant/` : deux éditeurs retenus sur les mêmes topics donneraient des doublons ou des bascules.
+* dknr-domotic passe par l'**API WebSocket** de Home Assistant (`/api/websocket`) et retrouve chaque entité par son `unique_id` (uid DKNR, `/` remplacé par `_`, plateforme `mqtt`). Les entités sans discovery Home Assistant dans leur source (source `dknr`, types non déclarés) sont ignorées.
+* Recopié : zone = pièce (zone cherchée par nom, sans casse, créée si absente ; préfixe `> ` retiré), nom (nom DKNR, vide = nom d'origine), masquage (`hidden_by: user` si l'entité est cachée ou bloquée ; démasquée seulement si le masquage vient de `user`, jamais de `disabled_by`), étiquette de l'élément (libellé `option_element` dans la langue du compte `admin`, créée si absente). Les étiquettes dont le nom est celui d'un élément sont gérées par dknr-domotic, les autres étiquettes de l'entité sont conservées.
+* Seules les différences sont envoyées (`config/entity_registry/update`, par lots de 20). Rien n'est jamais supprimé, ni zone, ni étiquette, ni entité.
+
+### Réglages et fonctionnement
+
+* `DKNR_HA_URL` (`http://<ip>:8123`, `ws://` accepté) et `DKNR_HA_TOKEN` (jeton longue durée) ; l'un des deux vide = désactivé.
+* WebSocket natif de Node.js, donné aux fonctions par `functionGlobalContext` (`data/settings.js`) : aucune dépendance npm.
+* Inject 60 s après le démarrage puis toutes les 5 minutes ; un seul passage à la fois (`running` dans le contexte du nœud). Résultat dans le statut du nœud, dans les logs quand quelque chose change, et dans le contexte flow `homeassistant` (`matched`, `updated`, `areas_created`, `labels_created`, `errors`, `error`).
+* Les noms : les entités MQTT de Home Assistant ont `has_entity_name`, le nom affiché peut donc être précédé du nom de l'appareil de la source selon la carte.
+
+
 ## Pistes et points ouverts
 
 * Délestage des thermostats quand la puissance dépasse l'abonnement (`temperature_duration_offloading` déjà prévu, non utilisé).
-* Champ présent mais pas encore utilisé : topic Home Assistant de la configuration MQTT.
+* Champ présent mais pas utilisé par dknr-domotic : topic Home Assistant de la configuration MQTT (la discovery Home Assistant reste aux sources, voir Home Assistant).
 * Ordre en attente des volets sans expiration (à revoir si un cas gênant apparaît).
 * Projet lié en conception : dknr-alexa (voir son `docs/CONCEPTION.md`).

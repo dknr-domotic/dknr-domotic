@@ -34,7 +34,7 @@ module.exports = {
   },
   functionExternalModules: true,
   functionTimeout: 0,
-  functionGlobalContext: { },
+  functionGlobalContext: { WebSocket: globalThis.WebSocket },
   ui: { path: "" },
   debugMaxLength: 1000,
   mqttReconnectTime: 15000,

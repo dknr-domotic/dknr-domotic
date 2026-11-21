@@ -88,6 +88,14 @@
         "env": []
     },
     {
+        "id": "b97c5713ce59e8b8",
+        "type": "tab",
+        "label": "homeassistant",
+        "disabled": false,
+        "info": "Miroir dans Home Assistant par son API WebSocket : zones (pièces), noms, masquage et étiquettes (éléments) des entités publiées par les sources dknr-xxx (voir docs/CONCEPTION.md, Home Assistant). Rien n'est publié sur MQTT. Désactivé sans DKNR_HA_URL ou DKNR_HA_TOKEN.",
+        "env": []
+    },
+    {
         "id": "8767b9c7c802159a",
         "type": "group",
         "z": "4bc72a1112cb448c",
@@ -23142,5 +23150,69 @@
         "y": 759,
         "w": 802,
         "h": 82
+    },
+    {
+        "id": "04d7df329b77e005",
+        "type": "group",
+        "z": "b97c5713ce59e8b8",
+        "name": "homeassistant - mirror",
+        "style": {
+            "fill": "#18bcf2",
+            "fill-opacity": "0.05",
+            "label": true
+        },
+        "nodes": [
+            "b6f0268ece250975",
+            "df703811d8d72f33"
+        ],
+        "x": 104,
+        "y": 179,
+        "w": 352,
+        "h": 82
+    },
+    {
+        "id": "b6f0268ece250975",
+        "type": "inject",
+        "z": "b97c5713ce59e8b8",
+        "g": "04d7df329b77e005",
+        "name": "5min",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "60",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 220,
+        "wires": [
+            [
+                "df703811d8d72f33"
+            ]
+        ]
+    },
+    {
+        "id": "df703811d8d72f33",
+        "type": "function",
+        "z": "b97c5713ce59e8b8",
+        "g": "04d7df329b77e005",
+        "name": "mirror",
+        "func": "// Mirror dknr-domotic into Home Assistant, through the Home Assistant WebSocket API\n// Nothing is published on MQTT: entities stay those of each dknr-xxx source discovery,\n// matched by their unique_id dknr_<source>_<parent>_<entity> (uid with _ instead of /).\n// Mirrored: area (room), name, hidden (hidden or blocked entity), one label by element.\n// Only entities whose unique_id starts with dknr_ are touched, nothing is ever deleted.\n\nconst url = (env.get('DKNR_HA_URL') || '').trim().replace(/\\/+$/, '');\nconst token = (env.get('DKNR_HA_TOKEN') || '').trim();\nif (url === '' || token === '') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'disabled' });\n\n    return null;\n}\n\n// One run at a time\nif (context.get('running') === true) {\n\n    return null;\n}\n\n// Native WebSocket of Node.js, given by settings.js functionGlobalContext\nconst WS = global.get('WebSocket');\nif (typeof WS !== 'function') {\n    node.status({ fill: 'red', shape: 'dot', text: 'no WebSocket' });\n    node.error('Home Assistant: WebSocket is not available (see functionGlobalContext in settings.js)');\n\n    return null;\n}\n\n// Wait for dknr entities after boot\nconst entities = global.get('entity') || {};\nif (Object.keys(entities).length === 0) {\n\n    return null;\n}\n\nconst wsurl = (url.startsWith('ws') ? url : url.replace(/^http/, 'ws')).replace(/\\/api\\/websocket$/, '') + '/api/websocket';\nconst rooms = (global.get('room') || {}).base || {};\nconst blocks = global.get('block') || {};\nconst lang = ((global.get('auth') || {}).admin || {}).lang || 'fr';\nconst words = { ...(global.get('dictionary.en.option_element') || {}), ...(global.get('dictionary[\"' + lang + '\"].option_element') || {}) };\n\ncontext.set('running', true);\nnode.status({ fill: 'blue', shape: 'dot', text: 'running' });\n\nlet ws = null;\nconst pending = {};\nlet sequence = 0;\n\n// Send a command and wait for its result\nconst call = (type, data) => new Promise((resolve, reject) => {\n    const id = ++sequence;\n    const timer = setTimeout(() => {\n        delete pending[id];\n        reject(new Error(type + ': timeout'));\n    }, 30000);\n    pending[id] = { resolve, reject, timer, type };\n    ws.send(JSON.stringify({ id, type, ...(data || {}) }));\n});\n\n// Open and authenticate\nconst connect = () => new Promise((resolve, reject) => {\n    const timer = setTimeout(() => reject(new Error('connection timeout')), 15000);\n    ws = new WS(wsurl);\n    ws.addEventListener('error', () => {\n        clearTimeout(timer);\n        reject(new Error('connection error to ' + wsurl));\n    });\n    ws.addEventListener('close', () => {\n        for (const id in pending) {\n            clearTimeout(pending[id].timer);\n            pending[id].reject(new Error('connection closed'));\n            delete pending[id];\n        }\n    });\n    ws.addEventListener('message', (event) => {\n        let m = {};\n        try { m = JSON.parse(event.data); } catch (e) { return; }\n        if (m.type === 'auth_required') {\n            ws.send(JSON.stringify({ type: 'auth', access_token: token }));\n        } else if (m.type === 'auth_ok') {\n            clearTimeout(timer);\n            resolve();\n        } else if (m.type === 'auth_invalid') {\n            clearTimeout(timer);\n            reject(new Error('invalid token'));\n        } else if (m.type === 'result' && pending[m.id]) {\n            const p = pending[m.id];\n            delete pending[m.id];\n            clearTimeout(p.timer);\n            if (m.success) {\n                p.resolve(m.result);\n            } else {\n                p.reject(new Error(p.type + ': ' + ((m.error || {}).message || 'failed')));\n            }\n        }\n    });\n});\n\nconst report = {\n    'time': Date.now(),\n    'matched': 0,\n    'updated': 0,\n    'areas_created': 0,\n    'labels_created': 0,\n    'errors': 0\n};\n\ntry {\n    await connect();\n\n    const areas = await call('config/area_registry/list');\n    const labels = await call('config/label_registry/list');\n    const list = await call('config/entity_registry/list');\n\n    // dknr entities by Home Assistant unique_id\n    const byUnique = {};\n    for (const uid in entities) {\n        byUnique['dknr_' + uid.split('/').join('_')] = uid;\n    }\n\n    // Home Assistant entities from dknr sources\n    const matches = [];\n    for (const r of list) {\n        if (r.platform !== 'mqtt' || typeof r.unique_id !== 'string' || !byUnique[r.unique_id]) {\n            continue;\n        }\n        matches.push([r, entities[byUnique[r.unique_id]], byUnique[r.unique_id]]);\n    }\n    report.matched = matches.length;\n\n    // Areas by name (dknr room \"> Home\" gives the area \"Home\")\n    const areaName = id => (String((rooms[id] || {}).name || id)).replace(/^>\\s*/, '').trim() || id;\n    const areaByName = {};\n    for (const a of areas) {\n        areaByName[String(a.name).toLowerCase()] = a.area_id;\n    }\n    const roomArea = {};\n    for (const id in rooms) {\n        const name = areaName(id);\n        if (!areaByName[name.toLowerCase()]) {\n            const a = await call('config/area_registry/create', { name });\n            areaByName[name.toLowerCase()] = a.area_id;\n            report.areas_created++;\n        }\n        roomArea[id] = areaByName[name.toLowerCase()];\n    }\n\n    // Labels by element: every label named like an element is managed by dknr\n    const labelByName = {};\n    for (const l of labels) {\n        labelByName[String(l.name).toLowerCase()] = l.label_id;\n    }\n    const managed = new Set();\n    for (const el in words) {\n        const id = labelByName[String(words[el]).toLowerCase()];\n        if (id) {\n            managed.add(id);\n        }\n    }\n    const elementLabel = async (el) => {\n        if (!el || typeof words[el] !== 'string') {\n            return null;\n        }\n        const name = words[el];\n        if (!labelByName[name.toLowerCase()]) {\n            const l = await call('config/label_registry/create', { name });\n            labelByName[name.toLowerCase()] = l.label_id;\n            managed.add(l.label_id);\n            report.labels_created++;\n        }\n\n        return labelByName[name.toLowerCase()];\n    };\n\n    // Differences only\n    const updates = [];\n    for (const [r, e, uid] of matches) {\n        const change = {};\n\n        const area = roomArea[e.room] || null;\n        if ((r.area_id || null) !== area) {\n            change.area_id = area;\n        }\n\n        const name = typeof e.name === 'string' && e.name.trim() !== '' ? e.name.trim() : null;\n        if ((r.name || null) !== name) {\n            change.name = name;\n        }\n\n        const hidden = e.hidden !== 0 || blocks[uid] === true;\n        if (hidden && !r.hidden_by) {\n            change.hidden_by = 'user';\n        } else if (!hidden && r.hidden_by === 'user') {\n            change.hidden_by = null;\n        }\n\n        const current = Array.isArray(r.labels) ? r.labels : [];\n        const wanted = current.filter(l => !managed.has(l));\n        const label = await elementLabel(e.element);\n        if (label) {\n            wanted.push(label);\n        }\n        if (wanted.length !== current.length || wanted.some(l => !current.includes(l))) {\n            change.labels = wanted;\n        }\n\n        if (Object.keys(change).length > 0) {\n            updates.push({ entity_id: r.entity_id, ...change });\n        }\n    }\n\n    // Send by small batches\n    for (let i = 0; i < updates.length; i += 20) {\n        const results = await Promise.allSettled(updates.slice(i, i + 20).map(u => call('config/entity_registry/update', u)));\n        for (const res of results) {\n            if (res.status === 'fulfilled') {\n                report.updated++;\n            } else {\n                report.errors++;\n                node.warn('Home Assistant: ' + res.reason.message);\n            }\n        }\n        node.status({ fill: 'blue', shape: 'dot', text: 'updating ' + Math.min(i + 20, updates.length) + '/' + updates.length });\n    }\n\n    node.status({ fill: report.errors ? 'yellow' : 'green', shape: 'dot', text: report.matched + ' matched, ' + report.updated + ' updated, ' + new Date().toLocaleTimeString('fr-FR') });\n    if (report.updated || report.areas_created || report.labels_created || report.errors) {\n        node.log('Home Assistant: ' + JSON.stringify(report));\n    }\n} catch (e) {\n    report.error = e.message;\n    node.status({ fill: 'red', shape: 'dot', text: e.message });\n    node.warn('Home Assistant: ' + e.message);\n} finally {\n    try { ws && ws.close(); } catch (e) { }\n    context.set('running', false);\n}\n\nflow.set('homeassistant', report);\nmsg.payload = report;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 220,
+        "wires": [
+            []
+        ]
     }
 ]

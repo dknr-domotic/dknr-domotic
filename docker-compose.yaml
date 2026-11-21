@@ -7,6 +7,8 @@
 # - DKNR_TELEGRAM_TOKEN (Telegram bot token, Telegram disabled if empty)
 # - DKNR_TELEGRAM_ID (Telegram chat number of the admin account)
 # - DKNR_TELEGRAM_SUMMARY (daily summary time, 20:00 by default, off to disable)
+# - DKNR_HA_URL (Home Assistant address, mirror disabled if empty)
+# - DKNR_HA_TOKEN (Home Assistant long-lived access token, mirror disabled if empty)
 #
 name: DKNRDomotic
 
@@ -64,6 +66,8 @@ services:
       DKNR_TELEGRAM_TOKEN: ${DKNR_TELEGRAM_TOKEN:-}
       DKNR_TELEGRAM_ID: ${DKNR_TELEGRAM_ID:-}
       DKNR_TELEGRAM_SUMMARY: ${DKNR_TELEGRAM_SUMMARY:-}
+      DKNR_HA_URL: ${DKNR_HA_URL:-}
+      DKNR_HA_TOKEN: ${DKNR_HA_TOKEN:-}
     ports:
       - 1880:1880
     networks:
